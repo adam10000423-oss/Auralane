@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auralane Desktop Lyrics</title>
+  <style>
+    :root {
+      --theme-color: #ff5c68;
+      --theme-color-rgb: 255, 92, 104;
+      --panel-opacity: 0.38;
+      --panel-hover-opacity: 0.55;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+    body {
+      padding: 5px;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    :root[data-font="serif"] body { font-family: Georgia, "Times New Roman", "Noto Serif TC", serif; }
+    :root[data-font="mono"] body { font-family: "Cascadia Mono", Consolas, "Noto Sans Mono CJK TC", monospace; }
+    .lyrics-container {
+      position: relative;
+      display: flex;
+      width: 100%;
+      height: 100%;
+      min-height: 46px;
+      align-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 8px;
+      background: rgba(10, 11, 15, var(--panel-opacity));
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.24);
+      backdrop-filter: blur(14px) saturate(1.12);
+      -webkit-backdrop-filter: blur(14px) saturate(1.12);
+      transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .lyrics-container:hover, .lyrics-container:focus-within {
+      border-color: rgba(var(--theme-color-rgb), 0.42);
+      background: rgba(10, 11, 15, var(--panel-hover-opacity));
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.32);
+    }
+    .drag-surface {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 108px;
+      cursor: grab;
+      -webkit-app-region: drag;
+    }
+    .drag-surface:active { cursor: grabbing; }
+    .lyric-stack {
+      display: flex;
+      width: 100%;
+      min-width: 0;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      text-align: center;
+    }
+    .lyric-row {
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+    .current-line {
+      font-size: 25px;
+      font-weight: 720;
+      color: rgba(255, 255, 255, 0.48);
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.48);
+    }
+    .current-line.plain {
+      color: rgba(255, 255, 255, 0.96);
+      text-shadow: 0 1px 7px rgba(0, 0, 0, 0.56), 0 0 14px rgba(var(--theme-color-rgb), 0.2);
+    }
+    .secondary-line {
+      display: none;
+      font-size: 14px;
+      font-weight: 520;
+      color: rgba(255, 255, 255, 0.58);
+      text-shadow: 0 1px 5px rgba(0, 0, 0, 0.56);
+    }
+    .lyrics-container[data-mode="next"] .secondary-line,
+    .lyrics-container[data-mode="translation"] .secondary-line { display: block; }
+    .karaoke-word { position: relative; display: inline-block; white-space: pre; }
+    .karaoke-word-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--word-progress, 0%);
+      overflow: hidden;
+      color: color-mix(in srgb, rgb(var(--theme-color-rgb)) 82%, #fff);
+      white-space: pre;
+      text-shadow: none;
+      pointer-events: none;
+    }
+    .karaoke-word.current .karaoke-word-fill {
+      color: color-mix(in srgb, rgb(var(--theme-color-rgb)) 82%, #fff);
+      text-shadow: none;
+    }
+    .widget-controls {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      z-index: 2;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-50%);
+      transition: opacity 130ms ease;
+      -webkit-app-region: no-drag;
+    }
+    .lyrics-container:hover .widget-controls, .lyrics-container:focus-within .widget-controls {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .icon-button {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.76);
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+    }
+    .icon-button:hover {
+      border-color: rgba(var(--theme-color-rgb), 0.4);
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
+    .icon-button:focus-visible { outline: 2px solid rgba(var(--theme-color-rgb), 0.75); outline-offset: 1px; }
+    .icon-button svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    @media (max-height: 78px) {
+      .secondary-line { display: none !important; }
+      .drag-surface { padding-top: 5px; padding-bottom: 5px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main id="lyricsContainer" class="lyrics-container" data-mode="compact">
+    <div class="drag-surface" title="拖曳以移動浮動歌詞">
+      <div class="lyric-stack">
+        <div id="currentLine" class="lyric-row current-line plain" aria-live="off">Auralane</div>
+        <div id="secondaryLine" class="lyric-row secondary-line"></div>
+      </div>
+    </div>
+    <div class="widget-controls" aria-label="浮動歌詞控制">
+      <button id="modeButton" class="icon-button" type="button" title="切換顯示模式" aria-label="切換顯示模式">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h12M4 18h8"/></svg>
+      </button>
+      <button id="dockButton" class="icon-button" type="button" title="移到螢幕上方" aria-label="移到螢幕上方">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14M12 21V7m-5 5 5-5 5 5"/></svg>
+      </button>
+      <button id="closeButton" class="icon-button" type="button" title="關閉浮動歌詞" aria-label="關閉浮動歌詞">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </main>
+  <script src="i18n.generated.js"></script>
+  <script src="lyrics.js"></script>
+</body>
+</html>

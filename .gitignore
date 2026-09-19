@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+/vendor/
+
+# Builds
+dist/
+dist-mac/
+
+# Env
+.venv/
+.env
+
+# Temp
+*.log
+.tmp*
+.build/
+resources/vocal-engine/
+.preview-profile/
+.offline-close-test/
+.packaged-offline-close-test/
+.playback-proxy-test/
+.auralane-dev-profile/
+*.encoding-repair-backup
+.codex-*

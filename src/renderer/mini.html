@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auralane Mini Player</title>
+  <link rel="stylesheet" href="mini.css">
+</head>
+<body class="mini-empty">
+  <div class="mini-drag-hint" aria-hidden="true">
+    <span class="mini-icon" data-mini-icon="grip-horizontal"></span>
+  </div>
+  <main id="miniShell" class="mini-shell">
+    <div id="miniBg" class="mini-bg" aria-hidden="true"></div>
+
+    <button id="miniArtButton" class="mini-art-button" type="button" aria-label="開啟主視窗">
+      <span id="miniArt" class="mini-art" aria-hidden="true"></span>
+    </button>
+
+    <section class="mini-player-content">
+      <button id="trackInfoButton" class="mini-track-info" type="button" aria-label="在主視窗開啟目前歌曲">
+        <strong id="miniTitle">尚未播放歌曲</strong>
+        <span id="miniArtist">Auralane</span>
+      </button>
+
+      <div class="mini-progress">
+        <input id="miniSeek" type="range" min="0" max="1000" value="0" aria-label="播放進度">
+        <div class="mini-time-row" aria-hidden="true">
+          <span id="miniCurrentTime">0:00</span>
+          <span id="miniDuration">0:00</span>
+        </div>
+      </div>
+
+      <div class="mini-controls" aria-label="播放控制">
+        <div class="mini-volume-control">
+          <button id="volumeButton" class="mini-icon-button mini-secondary" type="button" aria-label="調整音量" title="音量">
+            <span class="mini-icon" data-mini-icon="volume-2" aria-hidden="true"></span>
+          </button>
+          <div id="volumePopover" class="mini-volume-popover" hidden>
+            <input id="volumeRange" type="range" min="0" max="1" step="0.01" value="1" aria-label="音量">
+          </div>
+        </div>
+
+        <div class="mini-transport">
+          <button id="previousButton" class="mini-icon-button mini-skip" type="button" aria-label="上一首" title="上一首">
+            <span class="mini-icon" data-mini-icon="skip-back" aria-hidden="true"></span>
+          </button>
+          <button id="playButton" class="mini-icon-button mini-play" type="button" aria-label="播放" title="播放">
+            <span class="mini-icon" data-mini-icon="play" aria-hidden="true"></span>
+          </button>
+          <button id="nextButton" class="mini-icon-button mini-skip" type="button" aria-label="下一首" title="下一首">
+            <span class="mini-icon" data-mini-icon="skip-forward" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <button id="likeButton" class="mini-icon-button mini-secondary" type="button" aria-label="喜歡目前歌曲" title="喜歡">
+          <span class="mini-icon" data-mini-icon="heart" aria-hidden="true"></span>
+        </button>
+      </div>
+    </section>
+
+    <div class="mini-window-actions" aria-label="視窗控制">
+      <button id="pinButton" class="mini-window-button active" type="button" aria-label="取消置頂" title="取消置頂">
+        <span class="mini-icon" data-mini-icon="pin" aria-hidden="true"></span>
+      </button>
+      <button id="restoreButton" class="mini-window-button" type="button" aria-label="開啟主視窗" title="開啟主視窗">
+        <span class="mini-icon" data-mini-icon="maximize-2" aria-hidden="true"></span>
+      </button>
+      <button id="closeButton" class="mini-window-button" type="button" aria-label="關閉迷你播放器" title="關閉">
+        <span class="mini-icon" data-mini-icon="x" aria-hidden="true"></span>
+      </button>
+    </div>
+  </main>
+  <script src="i18n.generated.js"></script>
+  <script src="mini.js"></script>
+</body>
+</html>

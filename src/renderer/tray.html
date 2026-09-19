@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auralane Tray</title>
+  <link rel="stylesheet" href="tray.css">
+</head>
+<body>
+  <main class="tray-player">
+    <header><strong>Auralane</strong><button id="closeButton" aria-label="Close">×</button></header>
+    <div id="art" class="art"></div>
+    <section class="track-copy"><strong id="title">Nothing playing</strong><span id="artist">Open Auralane to choose music</span></section>
+    <input id="progress" type="range" min="0" max="1000" value="0" aria-label="Playback progress">
+    <div class="controls">
+      <button data-command="previous" aria-label="Previous">|◀</button>
+      <button id="playButton" class="primary" data-command="play-toggle" aria-label="Play">▶</button>
+      <button data-command="next" aria-label="Next">▶|</button>
+    </div>
+    <footer><button id="miniButton">Mini player</button><button id="openButton">Open Auralane</button></footer>
+  </main>
+  <script src="tray.js"></script>
+</body>
+</html>

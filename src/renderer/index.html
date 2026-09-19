@@ -1,0 +1,1703 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auralane</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="games.css">
+</head>
+<body class="player-empty">
+  <div class="native-titlebar" aria-hidden="true">
+    <div class="native-titlebar-brand">
+      <svg class="native-titlebar-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+        <rect class="mark-panel" x="2" y="2" width="20" height="20" rx="6"></rect>
+        <path class="mark-lane" d="M6.4 17.4 11.1 6.6c.34-.78 1.45-.78 1.8 0l4.7 10.8"></path>
+        <path class="mark-cross" d="M8.7 13.1h6.6"></path>
+        <path class="mark-wave" d="M5.8 8.8c1.1-1.25 2.28-1.25 3.38 0M14.82 8.8c1.1-1.25 2.28-1.25 3.38 0"></path>
+        <circle class="mark-core" cx="12" cy="17.35" r="1.45"></circle>
+      </svg>
+      <span class="native-titlebar-name">Auralane</span>
+    </div>
+  </div>
+  <button id="gameExitButton" class="game-exit-button" type="button" aria-label="Back to Home" title="Back to Home">
+    <span aria-hidden="true">&#8592;</span>
+  </button>
+  <div id="bgGlow" class="bg-glow"></div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sidebar-top-row">
+        <span class="nav-label" data-i18n="nav.browse">Browse</span>
+        <button id="sidebarCollapseButton" class="sidebar-collapse" data-i18n-skip type="button" aria-label="Collapse sidebar" title="Collapse sidebar"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 9l-3 3 3 3"/></svg></button>
+      </div>
+      <div class="nav-group">
+          <button class="nav active" data-view="home" data-i18n="nav.home" type="button">Home</button>
+          <button class="nav" data-view="search" data-i18n="nav.search" type="button">Search</button>
+          <button class="nav" data-view="explore" data-i18n="nav.explore" type="button">Explore</button>
+          <button class="nav" data-view="charts" data-i18n="nav.charts" type="button">Charts</button>
+          <button class="nav" data-view="new" data-i18n="nav.new" type="button">New releases</button>
+          <button class="nav" data-view="moods" data-i18n="nav.moods" type="button">Moods</button>
+      </div>
+      <div class="nav-group">
+          <span class="nav-label" data-i18n="nav.libraryGroup">Library</span>
+          <button class="nav" data-view="library" data-i18n="nav.library" type="button">Library</button>
+          <button class="nav" data-view="liked" data-i18n="nav.liked" type="button">Liked songs</button>
+          <button class="nav" data-view="downloaded" data-i18n="nav.downloaded" type="button">Downloaded</button>
+          <button class="nav" data-view="localMusic" type="button">Local Music</button>
+          <button class="nav" data-view="playlists" data-i18n="nav.playlists" type="button">Playlists</button>
+      </div>
+      <div class="nav-group">
+        <span class="nav-label" data-i18n="nav.system">System</span>
+        <button class="nav" data-view="settings" data-i18n="nav.settings" type="button">Settings</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="window-title">
+          <span>Auralane</span>
+          <strong id="globalStatus">Ready</strong>
+        </div>
+        <div class="search-box">
+          <form id="searchForm" class="search">
+            <span class="search-leading" aria-hidden="true">
+              <span class="ui-icon icon-search"></span>
+            </span>
+            <input id="searchInput" data-i18n-placeholder="search.placeholder" placeholder="Search songs, artists, or paste a YouTube link" autocomplete="off" aria-label="Search YouTube Music">
+            <button id="musicRecognizeButton" class="search-recognize" type="button" aria-label="Recognize music" title="Recognize music">
+              <span class="ui-icon icon-microphone"></span>
+            </button>
+            <button id="recognitionHistoryButton" class="search-history" type="button" aria-label="Recognition history" title="Recognition history">
+              <span class="ui-icon icon-recent"></span>
+            </button>
+            <button id="searchSubmitButton" class="search-submit" type="submit" aria-label="Search" title="Search">
+              <span class="ui-icon icon-search"></span>
+            </button>
+          </form>
+          <div id="searchSuggestions" class="search-suggestions hidden" role="listbox" aria-label="Search suggestions"></div>
+          <div id="recognitionHistoryPanel" class="recognition-history-panel hidden" aria-label="Recognition history"></div>
+        </div>
+        <button id="loginButton" class="account-button" type="button" aria-label="Sign in" title="Sign in">
+          <span id="loginAvatar" class="account-button-avatar" aria-hidden="true"></span>
+          <span id="loginLabel">Sign in</span>
+        </button>
+      </header>
+
+      <section id="homeView" class="view home-view">
+        <div class="home-top">
+          <div>
+            <span class="eyebrow">Home</span>
+            <h1 id="homeGreeting">Home</h1>
+            <p id="homeSubtitle">Recommended for this session.</p>
+          </div>
+          <button data-load="home" class="secondary" type="button">Refresh</button>
+        </div>
+        <div id="homeChips" class="chip-row" aria-label="Home filters"></div>
+        <span id="homeStatus" class="status">Loading home...</span>
+        <div id="homeQuickPicks" class="home-section"></div>
+        <div id="homeShelves" class="home-shelves"></div>
+        <div id="homeFallbackActions" class="actions-grid hidden">
+          <button data-load="explore" type="button">Open explore</button>
+          <button data-load="charts" type="button">Open charts</button>
+          <button data-load="new" type="button">Open new releases</button>
+          <button data-load="moods" type="button">Open moods</button>
+          <button data-load="liked" type="button">Load liked songs</button>
+          <button data-load="library" type="button">Load library songs</button>
+          <button data-load="history" type="button">Load history</button>
+          <button data-load="playlists" type="button">Load saved playlists</button>
+        </div>
+      </section>
+
+      <section id="searchView" class="view hidden">
+        <div class="section-head">
+          <h2>Search</h2>
+          <span id="searchStatus" class="status">Enter a query above.</span>
+        </div>
+        <div id="searchTabs" class="chip-row search-tabs" aria-label="Search filters"></div>
+        <div id="searchFilterBar" class="search-filter-bar" aria-label="Search refinements">
+          <button id="searchFilterOfficial" class="filter-toggle" data-search-option="officialAudio" type="button" aria-pressed="false" title="Official audio">
+            <span class="ui-icon icon-audio" aria-hidden="true"></span>
+            <span>Official audio</span>
+          </button>
+          <button id="searchFilterVideos" class="filter-toggle" data-search-option="videosOnly" type="button" aria-pressed="false" title="Videos">
+            <span class="ui-icon icon-video" aria-hidden="true"></span>
+            <span>Videos</span>
+          </button>
+          <button id="searchFilterLong" class="filter-toggle" data-search-option="longDuration" type="button" aria-pressed="false" title="Long duration">
+            <span class="ui-icon icon-clock" aria-hidden="true"></span>
+            <span>Long</span>
+          </button>
+          <button id="searchFilterRecent" class="filter-toggle" data-search-option="recent" type="button" aria-pressed="false" title="Recent releases">
+            <span class="ui-icon icon-recent" aria-hidden="true"></span>
+            <span>Recent</span>
+          </button>
+        </div>
+        <div id="searchResults" class="browse-results"></div>
+        <button id="searchLoadMoreButton" class="secondary hidden" type="button">Load more</button>
+      </section>
+
+      <section id="exploreView" class="view hidden">
+        <div class="section-head">
+          <h2>Explore</h2>
+          <button data-load="explore" class="secondary" type="button">Refresh</button>
+        </div>
+        <div id="exploreResults" class="browse-results"></div>
+      </section>
+
+      <section id="chartsView" class="view hidden">
+        <div class="section-head">
+          <h2>Charts</h2>
+          <button data-load="charts" class="secondary" type="button">Refresh</button>
+        </div>
+        <div id="chartsResults" class="browse-results"></div>
+      </section>
+
+      <section id="newView" class="view hidden">
+        <div class="section-head">
+          <h2>New releases</h2>
+          <button data-load="new" class="secondary" type="button">Refresh</button>
+        </div>
+        <div id="newResults" class="browse-results"></div>
+      </section>
+
+      <section id="moodsView" class="view hidden">
+        <div class="section-head">
+          <h2>Moods and genres</h2>
+          <button data-load="moods" class="secondary" type="button">Refresh</button>
+        </div>
+        <div id="moodsResults" class="browse-results"></div>
+      </section>
+
+      <section id="gamesView" class="view games-view hidden">
+        <div class="games-hero">
+          <div>
+            <span class="eyebrow">Play</span>
+            <h1>Music Arcade</h1>
+            <p id="gamesStatus">Choose a game. A running game uses its own screen and pauses Auralane playback.</p>
+          </div>
+          <div class="game-hero-actions">
+            <button id="gamesBackButton" class="secondary hidden" type="button">Back</button>
+            <button id="gamesRefreshButton" class="secondary" type="button">Refresh source</button>
+          </div>
+        </div>
+        <div id="gamesHub" class="game-hub-grid">
+          <button class="game-select-card" data-game-select="lyrics" type="button">
+            <span class="arcade-preview arcade-lyrics" aria-hidden="true"><span>Sing it back</span><b>Find the <i>missing</i> word.</b><span>01 / LYRICS</span></span>
+            <span class="game-badge">Lyrics</span>
+            <strong>Lyrics Fill</strong>
+            <small>Listen. Find the missing words.</small>
+          </button>
+          <button class="game-select-card" data-game-select="heardle" type="button">
+            <span class="arcade-preview arcade-heardle" aria-hidden="true"><b>?</b><span>1s / 2s / 4s / 7s / 11s / 15s</span></span>
+            <span class="game-card-symbol"><span class="ui-icon icon-audio"></span></span>
+            <span class="game-badge">Sonic Vault</span>
+            <strong>Song Detective</strong>
+            <small>Your library. Five mystery songs.</small>
+            <em>5 songs / 6 chances</em>
+          </button>
+          <button class="game-select-card" data-game-select="rhythm" type="button">
+            <span class="arcade-preview arcade-rhythm" aria-hidden="true"><i></i><i></i><i></i><i></i><span>D F J K</span></span>
+            <span class="game-card-symbol"><span class="ui-icon icon-play"></span></span>
+            <span class="game-badge">Audio Lab</span>
+            <strong>Live Stage</strong>
+            <small>Your song takes the stage.</small>
+            <em>4 keys / 3 difficulties</em>
+          </button>
+        </div>
+        <div id="gamesPlayArea" class="games-grid hidden">
+          <section id="sharedGameSearchStage" class="game-card game-panel game-library-picker">
+            <header class="game-picker-hero">
+              <div class="game-picker-orbit" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div><span id="gamePickerEyebrow" class="game-badge">Lyrics challenge</span><h2 id="gamePickerTitle">Choose your song</h2><p id="gamePickerDescription">Search the real Auralane catalogue and choose the track used by this run.</p></div>
+            </header>
+            <div class="game-picker-workbench">
+              <form id="lyricsGameSearchForm" class="game-search-form game-picker-search">
+                <span class="search-leading" aria-hidden="true"><span class="ui-icon icon-search"></span></span>
+                <input id="lyricsGameSearchInput" class="game-input" placeholder="Song title or artist" autocomplete="off">
+                <kbd>Enter</kbd>
+                <button class="primary-action icon-action" type="submit" aria-label="Search" title="Search"><span class="ui-icon icon-search"></span></button>
+              </form>
+              <div class="game-picker-source-row"><span><i class="source-dot online"></i>YouTube Music</span><span><i class="source-dot local"></i>Local library</span><span><i class="source-dot saved"></i>Downloads</span></div>
+              <div id="lyricsGameSearchResults" class="game-search-results game-picker-results"></div>
+            </div>
+            <aside id="lyricsGameSongInfo" class="game-song-info game-picker-selection hidden"></aside>
+            <span id="lyricsFillStatus" class="status game-picker-status">Start typing to find a song.</span>
+          </section>
+
+          <section id="sharedGameLevelStage" class="game-card game-panel hidden">
+            <div class="game-card-head">
+              <span class="game-badge">Prep</span>
+              <h2>Game Options</h2>
+            </div>
+            <div id="lyricsGameLevelHero" class="lyrics-game-level-hero">
+              <button id="lyricsGameBackToSearchButton" class="lyrics-game-back" type="button" aria-label="Back to song search">&#8592;</button>
+              <div>
+                <h3 id="lyricsGameLevelTitle">Choose a song</h3>
+                <a id="lyricsGameLevelArtist">Artist</a>
+                <p id="lyricsGameLevelMeta">Choice mode</p>
+              </div>
+            </div>
+            <div class="lyrics-game-start-title">
+              <span>Options</span>
+              <strong>Lyrics Source & Level</strong>
+            </div>
+
+            <label class="settings-field" style="margin-bottom: 16px;">
+              <span>
+                <strong>Lyrics source</strong>
+                <small>Select the source for game lyrics</small>
+              </span>
+              <select id="gameLyricsSourceSelect">
+                <option value="auto">Auto (Recommended)</option>
+                <option value="netease">NetEase Music</option>
+                <option value="musixmatch">Musixmatch</option>
+                <option value="lrclib">LRCLIB</option>
+              </select>
+            </label>
+
+            <div id="lyricsGameLevelRows" class="lyrics-game-level-rows"></div>
+            <div class="lyrics-game-level-footer">
+              <button id="sharedGameStartButton" class="primary-action" type="button" style="width: 100%; padding: 12px; font-size: 16px;">Start Game</button>
+            </div>
+          </section>
+
+          <section id="lyricsFillGame" class="game-card game-panel hidden">
+            <div class="game-card-head">
+              <span class="game-badge">Lyrics</span>
+              <h2>Lyrics Fill</h2>
+              <span id="lyricsFillScore" class="status">0 / 0</span>
+            </div>
+            <div id="lyricsGamePlayStage" class="lyrics-game-stage lyrics-game-play-stage">
+              <div class="lyrics-game-scorebar">
+                <div id="lyricsGameScoreDigits" class="lyrics-game-score">00000</div>
+                <div class="lyrics-game-score-center">
+                  <div class="lyrics-game-stats">
+                    <span>Gaps</span>
+                    <strong id="lyricsGameGapsCount">0</strong>
+                    <b id="lyricsGameHitsCount" class="hit">0</b>
+                    <b id="lyricsGameFailsCount" class="fail">0</b>
+                    <b id="lyricsGameSkipsCount" class="skip">0</b>
+                  </div>
+                  <div class="lyrics-game-life-row">
+                    <span aria-hidden="true">&#9829;</span>
+                    <div class="lyrics-game-life-track"><div id="lyricsGameLife" class="lyrics-game-life-fill"></div></div>
+                  </div>
+                </div>
+                <button id="lyricsGamePauseButton" class="lyrics-game-close" type="button" aria-label="Pause game" title="Pause game">&#10074;&#10074;</button>
+              </div>
+              <div id="lyricsGameMedia" class="lyrics-game-media">
+                <div id="lyricsGameVisual" class="lyrics-game-visual">
+                  <div id="lyricsGameVisualArt" class="lyrics-game-visual-art"></div>
+                  <div class="lyrics-game-visual-copy">
+                    <strong id="lyricsGameVisualTitle">Game audio</strong>
+                    <span id="lyricsGameVisualStatus">Resolving direct audio...</span>
+                  </div>
+                  <div class="lyrics-game-visual-bars" aria-hidden="true">
+                    <i></i><i></i><i></i><i></i><i></i>
+                  </div>
+                </div>
+                <audio id="lyricsGameAudio" preload="none"></audio>
+              </div>
+              <div class="lyrics-game-lyrics-wrap">
+                <div id="lyricsGameLyricsList" class="lyrics-game-lyrics-list"></div>
+                <div class="lyrics-game-choice-shell">
+                  <button id="lyricsGamePrevButton" class="lyrics-game-arrow" type="button" aria-label="Previous gap">&#9664;</button>
+                  <div id="lyricsGameOptions" class="lyrics-game-options"></div>
+                  <button id="lyricsGameNextButton" class="lyrics-game-arrow" type="button" aria-label="Skip gap">&#9654;</button>
+                </div>
+              </div>
+              <div id="lyricsAnswerFeedback" class="arcade-answer-feedback" aria-live="polite"></div>
+              <section id="lyricsResult" class="arcade-result hidden" aria-label="Lyrics results">
+                <span class="game-badge">RESULT</span><h2>Lyrics complete</h2>
+                <strong id="lyricsResultAccuracy" class="arcade-result-grade">0%</strong>
+                <div id="lyricsResultStats" class="arcade-result-stats"></div>
+                <div id="lyricsResultReview" class="arcade-review"></div>
+                <div class="arcade-result-actions"><button id="lyricsReplayButton" class="primary-action" type="button">Play again</button><button id="lyricsChooseButton" class="secondary" type="button">Choose song</button></div>
+              </section>
+              <div id="lyricsGamePauseMenu" class="lyrics-game-pause-menu hidden">
+                <div class="lyrics-game-pause-actions">
+                  <button id="lyricsGameResumeButton" type="button">Resume</button>
+                  <button id="lyricsGameRestartButton" type="button">Restart</button>
+                  <button id="lyricsGameGiveUpButton" type="button">Give up</button>
+                  <button id="lyricsGameQuitButton" type="button">Quit</button>
+                </div>
+              </div>
+            </div>
+            <div class="hidden">
+              <p id="lyricsFillPrompt" class="game-prompt">Search and choose a song to load lyrics.</p>
+              <input id="lyricsFillInput" class="game-input" placeholder="Missing word">
+              <button id="lyricsFillNewButton" class="secondary" type="button">New line</button>
+              <button id="lyricsFillCheckButton" class="primary-action" type="button">Check</button>
+            </div>
+          </section>
+
+          <section id="heardleGame" class="game-card game-panel hidden">
+            <div class="game-card-head">
+              <div>
+                <span class="game-badge">Audio challenge</span>
+                <h2>Song Detective</h2>
+              </div>
+              <div class="game-head-metrics">
+                <span id="heardleRound" class="game-metric">Round 1 / 6</span>
+                <span id="heardleScore" class="game-metric accent">Streak: 0</span>
+              </div>
+            </div>
+            <div class="heardle-game-stage">
+              <div class="game-mode-strip"><span id="heardleSessionProgress">Song 1 / 5</span><span id="heardleSourceLabel">Preparing library</span><button id="heardleNewSessionButton" class="secondary" type="button">New session</button></div>
+              <div class="heardle-listening-card">
+                <div class="heardle-orb" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+                <div class="heardle-listening-copy">
+                  <span>Identify this track</span>
+                  <strong id="heardleHint">Finding a playable song</strong>
+                  <small id="heardleSubHint">Every preview is played from your own music sources.</small>
+                </div>
+                <button id="heardlePlayButton" class="heardle-play-button" type="button" aria-label="Play snippet" title="Play snippet"><span class="ui-icon icon-play"></span></button>
+              </div>
+              <div class="heardle-progress-wrap">
+                <div class="heardle-progress" aria-label="Preview progression">
+                  <div class="heardle-chunk active" data-time="1"><b>1s</b></div>
+                  <div class="heardle-chunk" data-time="2"><b>2s</b></div>
+                  <div class="heardle-chunk" data-time="4"><b>4s</b></div>
+                  <div class="heardle-chunk" data-time="7"><b>7s</b></div>
+                  <div class="heardle-chunk" data-time="11"><b>11s</b></div>
+                  <div class="heardle-chunk" data-time="15"><b>15s</b></div>
+                </div>
+                <span id="heardleTimeDisplay">Preview 1 · 1s</span>
+              </div>
+              <div id="heardleAttempts" class="heardle-attempts" aria-live="polite"></div>
+              <div class="heardle-search-box">
+                <span class="ui-icon icon-search" aria-hidden="true"></span>
+                <input id="heardleSearchInput" class="game-input" placeholder="Search liked, local, or downloaded songs" autocomplete="off">
+                <div id="heardleSuggestions" class="game-search-results hidden"></div>
+              </div>
+              <div class="heardle-actions">
+                <button id="heardleSkipButton" class="secondary" type="button">Skip preview</button>
+                <button id="heardleSubmitButton" class="primary-action" type="button">Submit Guess</button>
+                <button id="heardleNextButton" class="secondary hidden" type="button">Next Song</button>
+              </div>
+              <div id="heardleResult" class="heardle-result hidden">
+                <div id="heardleRevealArt" class="heardle-reveal-art" aria-hidden="true"></div>
+                <div id="heardleRevealCopy"></div>
+              </div>
+              <section id="heardleSessionResult" class="arcade-result hidden" aria-label="Session results"><span class="game-badge">RESULT</span><h2>Session complete</h2><strong id="heardleSessionScore" class="arcade-result-grade">0</strong><div id="heardleSessionSongs" class="arcade-review"></div><button id="heardleSessionReplay" class="primary-action" type="button">Play again</button></section>
+            </div>
+          </section>
+
+          <section id="rhythmGame" class="game-card game-panel hidden">
+            <div class="game-card-head">
+              <div>
+                <span class="game-badge">Four key chart</span>
+                <h2>Live Stage</h2>
+              </div>
+              <div class="game-head-metrics">
+                <span id="rhythmCombo" class="game-metric">Combo 0</span>
+                <span id="rhythmScore" class="game-metric accent">Score 0</span>
+              </div>
+            </div>
+            <div class="rhythm-game-stage">
+              <div class="rhythm-stage-lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="rhythm-song-card">
+                <div id="rhythmTrackArt" class="rhythm-track-art"></div>
+                <div class="rhythm-song-copy">
+                  <span>Selected song</span>
+                  <strong id="rhythmTrackTitle">Choose a song to build the chart</strong>
+                  <small id="rhythmTrackArtist">Audio analysis creates the beat map.</small>
+                </div>
+                <div class="rhythm-controls">
+                  <label class="rhythm-speed-control">Difficulty<select id="rhythmDifficulty"><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="expert">Expert</option></select></label>
+                  <label class="rhythm-speed-control">Speed
+                    <select id="rhythmSpeedSelect"><option value="4">Relaxed</option><option value="3.25" selected>Standard</option><option value="2.6">Fast</option></select>
+                  </label>
+                  <label class="rhythm-speed-control">Timing (ms)<input id="rhythmOffset" type="number" min="-300" max="300" step="10" value="0" title="Positive values compensate late input"></label>
+                  <button id="rhythmChooseButton" class="secondary" type="button">Choose song</button>
+                  <button id="rhythmStartButton" class="primary-action" type="button">Start Game</button>
+                  <button id="rhythmStopButton" class="secondary hidden" type="button" aria-label="Pause game" title="Pause game">&#10074;&#10074;</button>
+                </div>
+              </div>
+              <div class="rhythm-runbar">
+                <span id="rhythmRank" class="rhythm-rank">C</span>
+                <span id="rhythmAccuracy">Accuracy —</span>
+                <span id="rhythmJudgement">Ready</span>
+                <span id="rhythmProgress">0 / 0</span>
+                <span class="rhythm-life-label">Life <b id="rhythmLife">100</b></span>
+              </div>
+              <div class="rhythm-playfield-shell">
+                <div class="rhythm-judgement-guide"><span>Perfect ±70ms</span><span>Great ±130ms</span></div>
+                <div class="rhythm-canvas-container">
+                  <div class="rhythm-lane-beams" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                  <canvas id="rhythmCanvas" width="1200" height="720"></canvas>
+                  <div id="rhythmCountdown" class="rhythm-countdown hidden">3</div>
+                  <div class="rhythm-keys-hint">
+                    <span>D</span><span>F</span><span>J</span><span>K</span>
+                  </div>
+                </div>
+              </div>
+              <div id="rhythmFeedback" class="rhythm-feedback">Pick a song, then start when the chart is ready.</div>
+              <section id="rhythmPauseMenu" class="arcade-result hidden" aria-label="Game paused"><span class="game-badge">PAUSE</span><h2>Take a breath</h2><div class="arcade-result-actions"><button id="rhythmResumeButton" class="primary-action" type="button">Resume</button><button id="rhythmRestartButton" class="secondary" type="button">Restart</button><button id="rhythmQuitButton" class="secondary" type="button">Choose song</button></div></section>
+              <div id="rhythmResult" class="rhythm-result hidden" aria-live="polite">
+                <span>RUN COMPLETE</span><strong id="rhythmResultRank">A</strong><div id="rhythmResultStats"></div>
+                <button id="rhythmReplayButton" class="primary-action" type="button">Play again</button>
+                <button id="rhythmResultChooseButton" class="secondary" type="button">Choose song</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="browseView" class="view hidden">
+        <div class="section-head">
+          <h2 id="browseTitle">Browse</h2>
+          <span id="browseStatus" class="status"></span>
+        </div>
+        <div id="browseResults" class="browse-results"></div>
+      </section>
+
+      <section id="collectionView" class="view collection-view hidden">
+        <button id="collectionBackButton" class="secondary collection-back-button hidden" type="button" aria-label="Back to artist">
+          <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg>
+          <span>Back to artist</span>
+        </button>
+        <div id="collectionHero" class="collection-hero">
+          <div id="collectionArt" class="collection-art"></div>
+          <div class="collection-copy">
+            <span id="collectionEyebrow" class="eyebrow">Collection</span>
+            <h1 id="collectionTitle">Collection</h1>
+            <p id="collectionSubtitle">Loading collection.</p>
+            <div id="collectionMeta" class="collection-meta" aria-label="Collection details"></div>
+            <p id="collectionDescription" class="collection-description"></p>
+            <div class="collection-actions">
+              <button id="collectionPlayButton" class="artist-play-button collection-action-icon" type="button" aria-label="Play" title="Play">
+                <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z"/></svg>
+                <span class="visually-hidden">Play</span>
+              </button>
+              <button id="collectionShuffleButton" class="secondary collection-action-icon" type="button" aria-label="Shuffle" title="Shuffle">
+                <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 17h2.5c5 0 6-10 11-10H21M16 21h5v-5M4 7h2.5c1.8 0 3.1 1.3 4.2 3M13.3 16c1.1 1.2 2.4 1 4.2 1H21"/></svg>
+              </button>
+              <button id="collectionDownloadButton" class="secondary icon-only" type="button" aria-label="Download all" title="Download all">
+                <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+              </button>
+              <button id="collectionAddSongsButton" class="secondary collection-action-icon hidden" type="button" aria-label="Add songs" title="Add songs"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h11M4 11h11M4 16h7"/><path d="M18 10v8M15 13h6"/></svg></button>
+              <button id="collectionRenameButton" class="secondary collection-action-icon hidden" type="button" aria-label="Rename" title="Rename"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16Z"/><path d="m13.5 6.5 4 4"/></svg></button>
+              <button id="collectionDeleteButton" class="secondary danger collection-action-icon hidden" type="button" aria-label="Delete" title="Delete"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg></button>
+              <button id="collectionLayoutButton" class="secondary collection-action-icon collection-layout-button" type="button" aria-label="Grid view" title="Grid view"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div id="collectionSearchBar" class="collection-page-search hidden">
+          <label class="collection-search">
+            <span class="ui-icon icon-search" aria-hidden="true"></span>
+            <input id="collectionSearchInput" placeholder="Search songs, artists, albums" autocomplete="off">
+          </label>
+        </div>
+        <span id="collectionStatus" class="status"></span>
+        <div id="collectionResults" class="collection-results"></div>
+        <button id="collectionLoadMoreButton" class="secondary hidden" type="button">Load more</button>
+      </section>
+
+      <section id="artistView" class="view artist-view hidden">
+        <div id="artistHero" class="artist-hero">
+          <div id="artistArt" class="artist-art"></div>
+          <div class="artist-copy">
+            <span class="eyebrow">Artist</span>
+            <h1 id="artistTitle">Artist</h1>
+            <p id="artistSubtitle">Loading artist.</p>
+            <div id="artistMeta" class="collection-meta" aria-label="Artist details"></div>
+            <p id="artistDescription" class="artist-description"></p>
+            <div class="artist-actions">
+              <button id="artistPlayButton" class="artist-play-button artist-action-icon-button" type="button" aria-label="Play popular songs" title="Play popular songs">
+                <svg class="artist-action-symbol standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z"/></svg>
+                <span class="visually-hidden">Play popular songs</span>
+              </button>
+              <button id="artistShuffleButton" class="secondary artist-action-icon-button" type="button" aria-label="Shuffle" title="Shuffle">
+                <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 17h2.5c5 0 6-10 11-10H21M16 21h5v-5M4 7h2.5c1.8 0 3.1 1.3 4.2 3M13.3 16c1.1 1.2 2.4 1 4.2 1H21"/></svg>
+                <span class="visually-hidden">Shuffle</span>
+              </button>
+              <button id="artistRadioButton" class="secondary artist-text-action" type="button" aria-label="Radio" title="Radio">
+                <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.5 5.5a9 9 0 0 0 0 13M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+                <span>Radio</span>
+              </button>
+              <button id="artistFollowButton" class="secondary artist-text-action artist-follow-icon" type="button" aria-label="Follow" title="Follow">
+                <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M19 8v6M16 11h6"/></svg>
+                <span class="button-label">Follow</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <span id="artistStatus" class="status"></span>
+        <div id="artistResults" class="artist-results"></div>
+      </section>
+
+      <section id="podcastView" class="view podcast-view hidden">
+        <div id="podcastHero" class="podcast-hero">
+          <div id="podcastArt" class="podcast-art"></div>
+          <div class="podcast-copy">
+            <span class="eyebrow">Podcast</span>
+            <h1 id="podcastTitle">Podcast</h1>
+            <p id="podcastSubtitle">Loading podcast.</p>
+            <div id="podcastMeta" class="collection-meta" aria-label="Podcast details"></div>
+            <div class="podcast-actions">
+              <button id="podcastPlayButton" class="artist-play-button" type="button">
+                <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z"/></svg>
+                <span>Play episodes</span>
+              </button>
+              <button id="podcastShuffleButton" class="secondary" type="button">Shuffle</button>
+            </div>
+          </div>
+        </div>
+        <span id="podcastStatus" class="status"></span>
+        <div id="podcastResults" class="podcast-results"></div>
+        <button id="podcastLoadMoreButton" class="secondary hidden" type="button">Load more episodes</button>
+      </section>
+
+      <section id="likedView" class="view liked-view hidden">
+        <div class="liked-hero">
+          <div>
+            <span class="eyebrow">Collection</span>
+            <h1 data-i18n="nav.liked">Liked Songs</h1>
+            <p id="likedStatus">Loading liked songs.</p>
+          </div>
+          <div class="liked-actions">
+            <button id="likedPlayButton" class="artist-play-button" type="button">
+              <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z"/></svg>
+              <span>Play</span>
+            </button>
+            <button id="likedShuffleButton" class="secondary artist-action-icon-button" type="button" aria-label="Shuffle liked songs" title="Shuffle liked songs">
+              <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 17h2.5c5 0 6-10 11-10H21M16 21h5v-5M4 7h2.5c1.8 0 3.1 1.3 4.2 3M13.3 16c1.1 1.2 2.4 1 4.2 1H21"/></svg>
+              <span class="visually-hidden">Shuffle liked songs</span>
+            </button>
+            <button id="likedDownloadButton" class="secondary icon-only" type="button" aria-label="Download all" title="Download all">
+              <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+            </button>
+            <button id="likedFollowPlayingButton" class="secondary icon-only collection-follow-button" type="button" data-collection-follow aria-label="Lock to playing song" title="Lock to playing song"></button>
+            <button id="likedRefreshButton" data-load="liked" class="secondary icon-only" type="button" aria-label="Refresh liked songs" title="Refresh liked songs"></button>
+            <button id="likedLayoutButton" class="secondary icon-only collection-layout-button" type="button" aria-label="Grid view" title="Grid view"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+          </div>
+        </div>
+        <div class="collection-toolbar">
+          <div id="likedFilters" class="collection-filter-row chip-row" aria-label="Liked songs filters">
+            <button class="chip active" data-liked-filter="all" type="button">All</button>
+            <button class="chip" data-liked-filter="downloaded" type="button">Downloaded</button>
+          </div>
+          <div class="collection-controls">
+            <label class="collection-search"><svg class="collection-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><input id="likedSearchInput" data-i18n-placeholder="search.liked" placeholder="Search liked songs"></label>
+          </div>
+        </div>
+        <div id="likedResults" class="liked-results"></div>
+      </section>
+
+      <section id="downloadedView" class="view downloaded-view hidden">
+        <div class="downloaded-hero">
+          <div>
+            <span class="eyebrow">Offline Library</span>
+            <h1 data-i18n="nav.downloaded">Downloaded</h1>
+            <p id="downloadedStatus">Loading downloaded songs.</p>
+          </div>
+          <div class="downloaded-actions">
+            <button id="downloadedFolderButton" class="secondary icon-only" type="button" aria-label="Open downloads folder" title="Open downloads folder">
+              <span class="ui-icon icon-local-folder" aria-hidden="true"></span>
+            </button>
+            <button id="downloadedPlayButton" class="artist-play-button" type="button">
+              <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z"/></svg>
+              <span>Play</span>
+            </button>
+            <button id="downloadedShuffleButton" class="secondary" type="button">Shuffle</button>
+            <button id="downloadedClearButton" class="secondary danger" type="button">Clear downloads</button>
+          </div>
+        </div>
+        <div class="collection-toolbar">
+          <div id="downloadedFilters" class="collection-filter-row chip-row" aria-label="Downloaded filters">
+            <button class="chip active" data-downloaded-filter="all" type="button">All</button>
+            <button class="chip" data-downloaded-filter="recent" type="button">Recent</button>
+          </div>
+          <div class="collection-controls">
+            <label class="collection-search"><svg class="collection-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><input id="downloadedSearchInput" data-i18n-placeholder="search.downloaded" placeholder="Search downloaded songs"></label>
+            <select id="downloadedSortSelect" class="collection-sort" aria-label="Sort downloaded songs">
+              <option value="recent">Recently downloaded</option>
+              <option value="title">Title A-Z</option>
+              <option value="artist">Artist A-Z</option>
+              <option value="size">File size</option>
+            </select>
+          </div>
+        </div>
+        <div id="downloadedResults" class="downloaded-results rows"></div>
+      </section>
+
+      <section id="libraryView" class="view library-view hidden">
+        <div class="library-hero">
+          <div>
+            <span class="eyebrow">Library</span>
+            <h1>Your Library</h1>
+            <p id="libraryStatus">Loading your saved music.</p>
+          </div>
+          <button data-load="library-refresh" class="secondary" type="button">Refresh</button>
+        </div>
+        <div class="collection-toolbar">
+          <div id="libraryFilters" class="collection-filter-row chip-row" aria-label="Library filters">
+            <button class="chip active" data-library-filter="all" type="button">Library</button>
+            <button class="chip" data-library-filter="playlists" type="button">Playlists</button>
+            <button class="chip" data-library-filter="albums" type="button">Albums</button>
+            <button class="chip" data-library-filter="artists" type="button">Artists</button>
+            <button class="chip" data-library-filter="podcasts" type="button">Podcasts</button>
+          </div>
+          <div class="collection-controls">
+            <label class="collection-search"><svg class="collection-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><input id="librarySearchInput" placeholder="Search library"></label>
+            <select id="librarySortSelect" class="collection-sort" aria-label="Sort library">
+              <option value="recent">Recently added</option>
+              <option value="played">Recently played</option>
+              <option value="title">Title A-Z</option>
+              <option value="creator">Creator A-Z</option>
+              <option value="type">Type</option>
+            </select>
+          </div>
+        </div>
+        <div id="libraryRecent" class="library-recent"></div>
+        <div id="librarySections" class="library-sections"></div>
+        <div id="libraryResults" class="rows hidden"></div>
+      </section>
+
+      <section id="historyView" class="view history-view hidden">
+        <div class="history-hero">
+          <div>
+            <span class="eyebrow">History</span>
+            <h1>Listening History</h1>
+            <p id="historyStatus">Load your recent YouTube Music playback history.</p>
+          </div>
+          <div class="history-actions">
+            <button id="historyPlayButton" class="artist-play-button" type="button">
+              <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z"/></svg>
+              <span>Play</span>
+            </button>
+            <button id="historyShuffleButton" class="secondary" type="button">Shuffle</button>
+            <button id="historyCreatePlaylistButton" class="secondary" type="button">Create recent playlist</button>
+            <button data-load="history" class="secondary" type="button">Refresh</button>
+          </div>
+        </div>
+        <div id="historyResults" class="history-results"></div>
+      </section>
+
+      <section id="playlistsView" class="view playlists-view hidden">
+        <div class="library-hero playlists-hero">
+          <div>
+            <span class="eyebrow">Library</span>
+            <h1>Playlists</h1>
+            <p id="playlistsStatus">Local and synced playlists in one place.</p>
+          </div>
+          <button data-load="playlists" class="secondary" type="button">Refresh</button>
+        </div>
+        <div class="collection-toolbar">
+          <div id="playlistsFilters" class="collection-filter-row chip-row" aria-label="Playlist filters">
+            <button class="chip active" data-playlists-filter="all" type="button">All</button>
+            <button class="chip" data-playlists-filter="local" type="button">On device</button>
+            <button class="chip" data-playlists-filter="synced" type="button">Synced</button>
+          </div>
+          <div class="collection-controls">
+            <label class="collection-search"><svg class="collection-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><input id="playlistsSearchInput" placeholder="Search playlists"></label>
+            <select id="playlistsSortSelect" class="collection-sort" aria-label="Sort playlists">
+              <option value="recent">Recently updated</option>
+              <option value="title">Title A-Z</option>
+              <option value="type">Source</option>
+            </select>
+          </div>
+        </div>
+        <section id="syncedPlaylistsSection" class="synced-playlists-section">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">YouTube Music</span>
+              <h2>Synced playlists</h2>
+            </div>
+          </div>
+          <div id="playlistResults" class="cards"></div>
+        </section>
+        <section id="localPlaylistsSection" class="local-playlist-panel local-playlist-tools">
+          <span class="eyebrow">On this device</span>
+          <div class="local-playlist-actions">
+            <button id="localPlaylistsImport" class="secondary" type="button">Import</button>
+            <button id="localPlaylistsExport" class="secondary" type="button">Export all</button>
+            <input id="localPlaylistsFile" type="file" accept=".json,.csv,application/json,text/csv" hidden>
+          </div>
+          <div id="localPlaylistResults" hidden></div>
+        </section>
+        <button id="playlistCreateFab" class="playlist-create-fab" type="button" aria-label="Create playlist" title="Create playlist">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </section>
+
+      <section id="localMusicView" class="view local-music-view hidden">
+        <div class="local-music-hero sticky-view-header">
+          <div><span class="eyebrow">On this device</span><h1>Local Music</h1><p id="localMusicStatus">Choose a folder to build your local music library.</p></div>
+          <div class="local-music-actions">
+            <button id="localMusicPlayButton" class="secondary icon-only local-music-icon-action" type="button" aria-label="Play all" title="Play all"><span class="ui-icon icon-local-play" aria-hidden="true"></span></button>
+            <button id="localMusicFolderButton" class="secondary icon-only local-music-icon-action" type="button" aria-label="Add folder" title="Add folder"><span class="ui-icon icon-local-folder" aria-hidden="true"></span></button>
+            <button id="localMusicRescanButton" class="secondary" type="button">Rescan</button>
+            <button id="localMusicClearButton" class="secondary danger icon-only local-music-icon-action" type="button" aria-label="Clear local music" title="Clear local music"><span class="ui-icon icon-local-clear" aria-hidden="true"></span></button>
+          </div>
+        </div>
+        <div class="collection-toolbar">
+          <div class="collection-controls">
+            <label class="collection-search"><span class="ui-icon icon-search" aria-hidden="true"></span><input id="localMusicSearchInput" placeholder="Search local songs, artists, or albums"></label>
+            <button id="localMusicLocateButton" class="secondary icon-only local-music-icon-action collection-locate-button" type="button" aria-label="Locate playing" title="Locate playing"><span class="ui-icon icon-local-locate" aria-hidden="true"></span></button>
+            <button id="localMusicLayoutButton" class="secondary icon-only local-music-icon-action collection-layout-button" type="button" aria-label="Grid view" title="Grid view"><span class="ui-icon icon-local-layout" aria-hidden="true"></span></button>
+            <select id="localMusicFolderSelect" class="collection-sort" aria-label="Local music folder"><option value="">All folders</option></select>
+            <select id="localMusicSortSelect" class="collection-sort" aria-label="Sort local music"><option value="recent">Recently scanned</option><option value="title">Title A-Z</option><option value="artist">Artist A-Z</option><option value="album">Album A-Z</option><option value="duration">Duration</option></select>
+          </div>
+        </div>
+        <div id="localMusicResults" class="liked-results"></div>
+      </section>
+
+      <section id="accountView" class="view hidden">
+        <div class="page-title">
+          <span class="eyebrow">Account</span>
+          <h1>Google sign-in</h1>
+          <p>Auralane uses a real YouTube Music login window and stores this desktop app's local session data on this machine.</p>
+        </div>
+        <div class="section-head">
+          <h2>Profile</h2>
+        </div>
+        <div class="account-panel">
+          <div id="accountAvatar" class="avatar"></div>
+          <div>
+            <h3 id="accountName">Guest</h3>
+            <p id="accountEmail">Not signed in</p>
+          </div>
+        </div>
+        <div class="actions-grid">
+          <button id="accountLogin" type="button">Sign in with Google</button>
+          <button id="logoutButton" type="button">Forget account</button>
+          <button id="clearButton" type="button">Clear local app data</button>
+        </div>
+        <section class="account-profiles">
+          <div class="section-head compact-head">
+            <h2>Saved accounts</h2>
+            <button id="accountSaveProfileButton" class="secondary" type="button">Save current</button>
+          </div>
+          <div id="accountProfilesList" class="account-profiles-list"></div>
+        </section>
+        <p class="note">The app opens the real Google login page. Cookies are stored locally for this desktop app and can be cleared here.</p>
+      </section>
+
+      <section id="settingsView" class="view hidden">
+        <div class="page-title">
+          <span class="eyebrow" data-i18n="nav.settings">Settings</span>
+          <h1 data-i18n="nav.settings">Settings</h1>
+          <p data-i18n="settings.subtitle">Personalize playback, lyrics, library and storage.</p>
+        </div>
+        <div class="settings-layout">
+          <nav id="settingsCategoryNav" class="settings-category-nav" aria-label="Settings categories">
+            <button class="active" data-settings-category="general" data-i18n="settings.general" type="button">General</button>
+            <button data-settings-category="lyrics" data-i18n="settings.lyrics" type="button">Lyrics</button>
+            <button data-settings-category="playback" data-i18n="settings.playback" type="button">Playback</button>
+            <button data-settings-category="library" data-i18n="settings.library" type="button">Library &amp; sync</button>
+            <button data-settings-category="storage" data-i18n="settings.storage" type="button">Storage</button>
+          </nav>
+          <div class="settings-grid">
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2 data-i18n="settings.layout">Layout</h2>
+            </div>
+            <label class="settings-field">
+              <span>
+                <strong data-i18n="settings.language">Interface language</strong>
+                <small data-i18n="settings.languageHint">Changes the app language immediately</small>
+              </span>
+              <select id="settingsLanguage" data-i18n-skip>
+                <option value="zh-TW">繁體中文</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="en">English</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+              </select>
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Right panel width</strong>
+                <small id="settingsRightWidthValue">360 px</small>
+              </span>
+              <input id="settingsRightWidth" type="range" min="300" max="620" step="10" value="360">
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Density</strong>
+                <small>List spacing</small>
+              </span>
+              <select id="settingsDensity">
+                <option value="normal">Normal</option>
+                <option value="compact">Compact</option>
+                <option value="comfortable">Comfortable</option>
+              </select>
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Theme color</strong>
+                <small>Controls the app glow and title bar</small>
+              </span>
+              <select id="settingsThemeMode">
+                <option value="auto">Follow current song</option>
+                <option value="rose">Rose</option>
+                <option value="purple">Purple</option>
+                <option value="indigo">Indigo</option>
+                <option value="blue">Blue</option>
+                <option value="cyan">Cyan</option>
+                <option value="teal">Teal</option>
+                <option value="green">Green</option>
+                <option value="lime">Lime</option>
+                <option value="gold">Amber</option>
+                <option value="orange">Orange</option>
+                <option value="blue-grey">Blue grey</option>
+              </select>
+            </label>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Lyrics</h2>
+            </div>
+            <label class="settings-field">
+              <span>
+                <strong>Lyrics source</strong>
+                <small>Choose which provider to search first</small>
+              </span>
+              <select id="settingsLyricsSource">
+              <option value="auto">Auto</option>
+              <option value="netease">NetEase Music</option>
+              <option value="musixmatch">Musixmatch</option>
+              <option value="betterlyrics">BetterLyrics</option>
+              <option value="lrclib">LRCLIB</option>
+              <option value="kugou">KuGou</option>
+              <option value="paxsenix">Paxsenix</option>
+              <option value="lyricsplus">LyricsPlus</option>
+              <option value="youtube-transcript">YouTube transcript</option>
+              <option value="lyrics-ovh">Lyrics.ovh</option>
+              <option value="local">Local LRC</option>
+            </select>
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Provider priority</strong>
+                <small>Used by Auto lookup and Lyrics Search ordering</small>
+              </span>
+              <select id="settingsLyricsPriority">
+                <option value="netease,musixmatch,betterlyrics,lrclib,kugou,paxsenix,lyricsplus,lyrics-ovh,youtube-transcript">NetEase &gt; Musixmatch first (Recommended)</option>
+                <option value="musixmatch,netease,betterlyrics,lrclib,kugou,paxsenix,lyricsplus,lyrics-ovh,youtube-transcript">Musixmatch &gt; NetEase first</option>
+                <option value="netease,lrclib,betterlyrics,musixmatch,kugou,paxsenix,lyricsplus,lyrics-ovh,youtube-transcript">NetEase &gt; LRCLIB first</option>
+                <option value="netease,paxsenix,musixmatch,lyricsplus,betterlyrics,lrclib,kugou,lyrics-ovh,youtube-transcript">Word sync first</option>
+                <option value="musixmatch,lyrics-ovh,lrclib,netease,kugou,betterlyrics,paxsenix,lyricsplus,youtube-transcript">Plain lyrics first</option>
+                <option value="youtube-transcript,netease,musixmatch,lrclib,kugou,betterlyrics,paxsenix,lyricsplus,lyrics-ovh">YouTube transcript first</option>
+              </select>
+            </label>
+            <div class="settings-field lyrics-source-switches">
+              <span>
+                <strong>Search sources</strong>
+                <small>Turn providers on or off for Lyrics Search</small>
+              </span>
+              <div class="provider-switch-grid">
+                <label><input id="settingsLyricsProviderNetease" type="checkbox"> NetEase Music</label>
+                <label><input id="settingsLyricsProviderMusixmatch" type="checkbox"> Musixmatch</label>
+                <label><input id="settingsLyricsProviderBetter" type="checkbox"> BetterLyrics</label>
+                <label><input id="settingsLyricsProviderLrclib" type="checkbox"> LRCLIB</label>
+                <label><input id="settingsLyricsProviderKugou" type="checkbox"> KuGou</label>
+                <label><input id="settingsLyricsProviderPaxsenix" type="checkbox"> Paxsenix</label>
+                <label><input id="settingsLyricsProviderLyricsPlus" type="checkbox"> LyricsPlus</label>
+                <label><input id="settingsLyricsProviderOvh" type="checkbox"> Lyrics.ovh</label>
+                <label><input id="settingsLyricsProviderTranscript" type="checkbox"> YouTube transcript</label>
+              </div>
+            </div>
+            <label class="settings-field">
+              <span>
+                <strong>Translation language</strong>
+                <small>Used by the lyrics translate button</small>
+              </span>
+              <select id="settingsLyricsTranslateTarget">
+                <option value="zh-TW">Traditional Chinese</option>
+                <option value="zh-CN">Simplified Chinese</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Text scale</strong>
+                <small id="settingsLyricsScaleValue">100%</small>
+              </span>
+              <input id="settingsLyricsScale" type="range" min="85" max="145" step="5" value="100">
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Lyrics card template</strong>
+                <small>Used by the Share button in session lyrics</small>
+              </span>
+              <select id="settingsLyricsCardTemplate">
+                <option value="auralane">Auralane gradient</option>
+                <option value="clean">Clean white</option>
+                <option value="poster">Poster dark</option>
+              </select>
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Desktop lyrics opacity</strong>
+                <small id="settingsDesktopLyricsOpacityValue">65%</small>
+              </span>
+              <input id="settingsDesktopLyricsOpacity" type="range" min="20" max="95" step="5" value="65">
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Desktop lyrics font</strong>
+                <small>Applied to the floating desktop lyrics window</small>
+              </span>
+              <select id="settingsDesktopLyricsFont">
+                <option value="system">System</option>
+                <option value="serif">Serif</option>
+                <option value="mono">Mono</option>
+              </select>
+            </label>
+            <div class="settings-preview">
+              <span>Every line carries the signal.</span>
+              <span>Active lyrics stay readable at a distance.</span>
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Playback</h2>
+            </div>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Web fallback</strong>
+                <small>Optional signed-in fallback; never used for guest playback</small>
+              </span>
+              <input id="settingsWebFallback" type="checkbox">
+            </label>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Offline mode</strong>
+                <small>Only play downloaded songs and skip online streams</small>
+              </span>
+              <input id="settingsOfflineMode" type="checkbox">
+            </label>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Smart cache</strong>
+                <small>Automatically cache songs after successful direct playback</small>
+              </span>
+              <input id="settingsSmartCache" type="checkbox">
+            </label>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Notifications</strong>
+                <small>Show a system notification when a new song starts</small>
+              </span>
+              <input id="settingsNotifications" type="checkbox">
+            </label>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Queue Lock</strong>
+                <small>Freeze the current queue and block queue edits</small>
+              </span>
+              <input id="settingsQueueLock" type="checkbox">
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Preferred quality</strong>
+                <small>Used when multiple direct streams are available</small>
+              </span>
+              <select id="settingsQuality">
+                <option value="auto">Auto</option>
+                <option value="high">High</option>
+                <option value="balanced">Balanced</option>
+                <option value="data-saver">Data saver</option>
+              </select>
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Crossfade</strong>
+                <small id="settingsCrossfadeValue">Off</small>
+              </span>
+              <input id="settingsCrossfade" type="range" min="0" max="12" step="1" value="0">
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Artist shuffle songs</strong>
+                <small id="settingsArtistShuffleLimitValue">100 songs</small>
+              </span>
+              <input id="settingsArtistShuffleLimit" type="range" min="25" max="500" step="25" value="100">
+            </label>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Audio Processing (DSP)</h2>
+            </div>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Normalize Loudness</strong>
+                <small>Compress dynamic range so quiet parts are louder</small>
+              </span>
+              <input id="settingsDSPNormalize" type="checkbox">
+            </label>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Skip silence</strong>
+                <small>Speed through sustained silence during direct and offline playback</small>
+              </span>
+              <input id="settingsSkipSilence" type="checkbox">
+            </label>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Preserve Pitch</strong>
+                <small>Keep original pitch when changing speed</small>
+              </span>
+              <input id="settingsDSPPreservePitch" type="checkbox" checked>
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Playback Speed</strong>
+                <small id="settingsDSPSpeedValue">1.0x</small>
+              </span>
+              <input id="settingsDSPSpeed" type="range" min="0.5" max="2.0" step="0.05" value="1.0">
+            </label>
+            <div class="settings-field eq-field">
+              <span style="display:block; margin-bottom: 8px;">
+                <strong>10-Band Equalizer</strong>
+                <small style="display:block">Adjust frequency bands</small>
+              </span>
+              <div class="eq-sliders" id="settingsDSPEQ" style="display:flex; gap:8px; align-items:flex-end;">
+                <!-- Sliders for 31, 62, 125, 250, 500, 1k, 2k, 4k, 8k, 16k Hz -->
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>31</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>62</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>125</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>250</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>500</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>1k</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>2k</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>4k</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>8k</span></div>
+                <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;"><input type="range" class="eq-band" min="-12" max="12" step="0.1" value="0" style="appearance:slider-vertical; height:80px; width:16px;"><span>16k</span></div>
+              </div>
+              <button id="settingsDSPResetEQ" class="secondary" type="button" style="margin-top:12px;">Reset EQ</button>
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Library sync</h2>
+            </div>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Auto refresh</strong>
+                <small>Refresh Library when opening the Library page</small>
+              </span>
+              <input id="settingsLibraryAutoRefresh" type="checkbox" checked>
+            </label>
+            <label class="settings-field">
+              <span>
+                <strong>Default sort</strong>
+                <small>Initial Library ordering</small>
+              </span>
+              <select id="settingsLibraryDefaultSort">
+                <option value="recent">Recently added</option>
+                <option value="played">Recently played</option>
+                <option value="title">Title A-Z</option>
+                <option value="creator">Creator A-Z</option>
+              </select>
+            </label>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Sync Outbox</h2>
+            </div>
+            <small id="syncOutboxStatus" class="status">No pending sync actions.</small>
+            <div class="settings-actions">
+              <button id="syncOutboxRetryAll" class="secondary" type="button">Retry all</button>
+              <button id="syncOutboxClearDone" class="secondary" type="button">Clear done</button>
+            </div>
+            <div id="syncOutboxList" class="settings-list"></div>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Download manager</h2>
+            </div>
+            <small id="downloadManagerStatus" class="status">No downloads queued.</small>
+            <div class="settings-actions">
+              <button id="downloadManagerPause" class="secondary" type="button">Pause</button>
+              <button id="downloadManagerResume" class="secondary" type="button">Resume</button>
+              <button id="downloadManagerRetryFailed" class="secondary" type="button">Retry failed</button>
+              <button id="downloadManagerClearFailed" class="secondary danger" type="button">Clear failed</button>
+            </div>
+            <div id="downloadManagerList" class="settings-list"></div>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Smart playlists</h2>
+            </div>
+            <label class="settings-field">
+              <span>
+                <strong>Rule</strong>
+                <small>Create a YouTube playlist from local listening and library data</small>
+              </span>
+              <select id="smartPlaylistRule">
+                <option value="recent-7">Most played recently</option>
+                <option value="liked-not-downloaded">Liked but not downloaded</option>
+                <option value="downloaded-stale">Downloaded but not heard lately</option>
+                <option value="current-artist">Current artist songs</option>
+                <option value="sleep">Sleep queue</option>
+                <option value="commute">Commute queue</option>
+                <option value="energy">High energy queue</option>
+              </select>
+            </label>
+            <div class="settings-actions">
+              <button id="smartPlaylistCreate" class="secondary" type="button">Create playlist</button>
+            </div>
+            <small id="smartPlaylistStatus" class="status">Load Library, Liked Songs, History or Downloads for richer rules.</small>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Library health</h2>
+            </div>
+            <div class="settings-actions">
+              <button id="healthCheckRun" class="secondary" type="button">Run check</button>
+            </div>
+            <small id="healthCheckStatus" class="status">Checks duplicates, failed playback and missing offline files.</small>
+            <div id="healthCheckResults" class="settings-list"></div>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Playback stats</h2>
+            </div>
+            <small id="playbackStatsStatus" class="status">No listening stats yet.</small>
+            <div id="playbackStatsResults" class="settings-list"></div>
+            <div class="settings-actions">
+              <button id="playbackStatsReset" class="secondary danger" type="button">Reset stats</button>
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Cache</h2>
+            </div>
+            <label class="settings-field">
+              <span>
+                <strong>Smart cache budget</strong>
+                <small id="settingsCacheSizeValue">512 MB</small>
+              </span>
+              <input id="settingsCacheSize" type="range" min="128" max="4096" step="128" value="512">
+            </label>
+            <div class="settings-actions">
+              <button id="settingsClearCache" class="secondary" type="button">Clear offline cache</button>
+            </div>
+            <small id="settingsCacheStatus" class="status">Manual downloads stay until you remove them.</small>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Shortcuts</h2>
+            </div>
+            <div class="shortcut-grid">
+              <div class="shortcut-item"><span>Command palette</span><span class="shortcut-keys"><kbd>Ctrl</kbd><kbd>K</kbd></span></div>
+              <div class="shortcut-item"><span>Play / pause</span><span class="shortcut-keys"><kbd>Space</kbd></span></div>
+              <div class="shortcut-item"><span>Next track</span><span class="shortcut-keys"><kbd>Ctrl</kbd><kbd>Right</kbd></span></div>
+              <div class="shortcut-item"><span>Previous track</span><span class="shortcut-keys"><kbd>Ctrl</kbd><kbd>Left</kbd></span></div>
+            </div>
+            <div class="shortcut-editor">
+              <label><span>Global play / pause</span><input id="shortcutPlayPause" value="Ctrl+Alt+Space"></label>
+              <label><span>Global next track</span><input id="shortcutNext" value="Ctrl+Alt+Right"></label>
+              <label><span>Global previous track</span><input id="shortcutPrevious" value="Ctrl+Alt+Left"></label>
+              <label><span>Show Auralane</span><input id="shortcutShowMain" value="Ctrl+Alt+M"></label>
+              <button id="shortcutSaveButton" class="secondary" type="button">Save global shortcuts</button>
+              <small id="shortcutStatus" class="status">Global shortcuts work while Auralane is in the background.</small>
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head"><h2>GitHub updates <span class="new-badge">New</span></h2></div>
+            <label class="settings-field"><span><strong>Release repository</strong><small>Official updates are published through GitHub Releases</small></span><input id="updateRepository" value="adam10000423-oss/Auralane" readonly></label>
+            <div class="settings-actions"><button id="updateCheckButton" class="secondary" type="button">Check for updates</button><button id="updateDownloadButton" class="primary-action hidden" type="button">Update now</button><button id="updateInstallButton" class="secondary hidden" type="button">Restart and install</button></div>
+            <progress id="updateProgress" class="hidden" max="100" value="0"></progress>
+            <small id="updateStatus" class="status">Updates are downloaded from GitHub Releases.</small>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Advanced</h2>
+            </div>
+            <label class="settings-field inline-field">
+              <span>
+                <strong>Debug logs</strong>
+                <small>Show technical status in the top bar</small>
+              </span>
+              <input id="settingsDebugLogs" type="checkbox">
+            </label>
+            <div class="settings-actions">
+              <button id="settingsExportState" class="secondary" type="button">Copy app state summary</button>
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Backup &amp; restore</h2>
+            </div>
+            <p class="status">Exports local settings, playlists, history, lyrics edits and queue metadata. Account cookies and downloaded audio are never included.</p>
+            <div class="settings-actions">
+              <button id="settingsBackupExport" class="secondary" type="button">Export backup</button>
+              <button id="settingsBackupImport" class="secondary" type="button">Restore backup</button>
+              <input id="settingsBackupFile" type="file" accept=".json,application/json" hidden>
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <div class="section-head compact-head">
+              <h2>Reset</h2>
+            </div>
+            <div class="settings-actions">
+              <button id="settingsResetLayout" class="secondary" type="button">Reset settings</button>
+            </div>
+          </section>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="queue-panel" id="rightPanel">
+      <div id="rightResizeHandle" class="panel-resizer" role="separator" aria-orientation="vertical" aria-label="Resize right panel" tabindex="0"></div>
+      <div class="queue-head">
+        <div>
+          <span class="eyebrow" data-i18n="session.title">Session</span>
+          <span id="queueStatus" class="status">Queue is empty.</span>
+        </div>
+        <div class="queue-actions" aria-label="Session actions">
+          <button id="lyricsExpandButton" class="queue-action icon-button lyrics-expand" type="button" aria-label="Expand lyrics" title="Expand lyrics">
+            <span class="ui-icon icon-expand" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+      <div class="side-tabs">
+        <button class="side-tab active" data-side-panel="queue" type="button" aria-label="Queue" title="Queue">
+          <span class="ui-icon icon-queue" aria-hidden="true"></span>
+          <span data-i18n="session.queue">Queue</span>
+        </button>
+        <button class="side-tab" data-side-panel="lyrics" type="button" aria-label="Lyrics" title="Lyrics">
+          <span class="ui-icon icon-lyrics" aria-hidden="true"></span>
+          <span data-i18n="session.lyrics">Lyrics</span>
+        </button>
+      </div>
+      <div id="queuePane" class="side-pane">
+        <div class="queue-tools" aria-label="Queue tools">
+          <button id="queueFollowButton" class="queue-tool" type="button" aria-label="Follow playing song" title="Follow playing song">
+            <span class="ui-icon icon-queue-follow" aria-hidden="true"></span>
+          </button>
+          <button id="queueLockButton" class="queue-tool" type="button" aria-label="Queue lock" title="Queue lock">
+            <span class="ui-icon icon-lock" aria-hidden="true"></span>
+          </button>
+          <button id="queueClearButton" class="queue-tool" type="button" aria-label="Clear queue" title="Clear queue">
+            <span class="ui-icon icon-trash" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div id="queueList" class="rows compact"></div>
+      </div>
+      <div id="lyricsPane" class="side-pane hidden">
+        <div class="lyrics-meta">
+          <strong id="lyricsTitle" data-i18n="session.lyrics">Lyrics</strong>
+          <span id="lyricsStatus">Choose a song.</span>
+          <div class="lyrics-expanded-controls">
+          <div class="lyrics-version-switcher">
+            <button id="lyricsVersionButton" class="lyrics-version-button" type="button" aria-haspopup="menu" aria-expanded="false" disabled>
+              <span>Lyrics source</span><small>No version</small>
+            </button>
+            <div id="lyricsVersionMenu" class="lyrics-version-menu hidden" role="menu"></div>
+          </div>
+          <div class="lyrics-quick-actions">
+            <details id="lyricsQuickSettings" class="lyrics-quick-settings">
+              <summary class="lyrics-tool">Display</summary>
+              <div class="lyrics-quick-drawer">
+                <label>Background<select id="lyricsQuickBackground"><option value="song">Follow song</option><option value="theme">Theme</option><option value="plain">Plain</option></select></label>
+                <label>Alignment<select id="lyricsQuickAlign"><option value="auto">Duet / auto</option><option value="left">Left</option><option value="center">Center</option></select></label>
+                <label>View<select id="lyricsQuickDisplay"><option value="scroll">Scrolling lyrics</option><option value="single">Current line</option></select></label>
+                <label>Cover<select id="lyricsQuickCover"><option value="square">Square cover</option><option value="vinyl">Vinyl record</option></select></label>
+                <label>Text size<input id="lyricsQuickScale" type="range" min="85" max="145" step="5" value="100"></label>
+              </div>
+            </details>
+            <button id="lyricsQuickReloadButton" class="lyrics-quick-reload secondary icon-only" type="button" aria-label="Reload lyrics" title="Reload lyrics" disabled></button>
+          </div>
+          <div class="lyrics-quick-offset" aria-label="Lyrics timing adjustment">
+            <button id="lyricsOffsetMinus" class="lyrics-tool" type="button" aria-label="Delay lyrics by 500 milliseconds" title="Delay lyrics by 500ms" disabled>-500</button>
+            <span id="lyricsOffsetValue">0ms</span>
+            <button id="lyricsOffsetPlus" class="lyrics-tool" type="button" aria-label="Advance lyrics by 500 milliseconds" title="Advance lyrics by 500ms" disabled>+500</button>
+            <button id="lyricsOffsetReset" class="lyrics-tool" type="button" aria-label="Reset lyrics offset" title="Reset lyrics offset" disabled>Reset</button>
+          </div>
+          </div>
+          <div class="lyrics-control-shelf" aria-label="Lyrics controls">
+            <div class="lyrics-tools lyrics-main-tools" aria-label="Lyrics lookup controls">
+              <button id="lyricsSearchButton" class="lyrics-tool primary" type="button" aria-label="Search lyrics" title="Search lyrics" disabled>Search</button>
+              <button id="lyricsReloadButton" class="lyrics-tool" type="button" aria-label="Reload lyrics" title="Reload lyrics" disabled>Reload</button>
+            </div>
+            <details class="lyrics-more-menu">
+              <summary class="lyrics-tool" aria-label="More lyrics tools">More</summary>
+              <div class="lyrics-more-popover">
+                <div class="lyrics-tools lyrics-secondary-tools" aria-label="Lyrics edit and share controls">
+                  <button id="lyricsTranslateButton" class="lyrics-tool" type="button" aria-label="Translate lyrics" title="Translate lyrics" disabled>Translate</button>
+                  <button id="lyricsRomanizeButton" class="lyrics-tool" type="button" aria-label="Show romanized lyrics" title="Romanized lyrics" disabled>Romanize</button>
+                  <button id="lyricsDuetButton" class="lyrics-tool" type="button" aria-label="Karaoke duet mode" title="Karaoke duet mode" disabled>Duet</button>
+                  <button id="lyricsCopyButton" class="lyrics-tool" type="button" aria-label="Copy all lyrics" title="Copy all lyrics" disabled>Copy</button>
+                  <button id="lyricsShareCardButton" class="lyrics-tool" type="button" aria-label="Share lyrics card" title="Share lyrics card" disabled>Share</button>
+                  <button id="lyricsTimelineButton" class="lyrics-tool" type="button" aria-label="Edit lyrics timeline" title="Edit lyrics timeline" disabled>Timeline</button>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div id="lyricsFullscreenCoverArt" class="lyrics-fullscreen-cover" aria-hidden="true">
+          <span class="lyrics-cover-surface"></span>
+          <canvas class="lyrics-vinyl-wave"></canvas>
+        </div>
+        <div id="lyricsList" class="lyrics-list"></div>
+        <button id="lyricsSyncButton" class="lyrics-sync-button hidden" type="button">Sync</button>
+      </div>
+    </aside>
+
+    <footer class="player">
+      <div class="now">
+        <div id="nowArt" class="cover"></div>
+        <div>
+          <div class="now-title-line"><h2 id="nowTitle">Nothing playing</h2><button id="nowQualityButton" class="quality-button" type="button" aria-haspopup="menu">Auto</button></div>
+          <div id="nowSubtitle" class="now-artists" aria-label="Artists"><span>Choose a song</span></div>
+        </div>
+      </div>
+      <div class="player-center">
+        <div class="controls">
+          <button id="shuffleButton" type="button" aria-label="Shuffle off" title="Shuffle off"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3h5v5M4 17h2.5c5 0 6-10 11-10H21M16 21h5v-5M4 7h2.5c1.8 0 3.1 1.3 4.2 3M13.3 16c1.1 1.2 2.4 1 4.2 1H21"/></svg></button>
+          <button id="prevButton" type="button" aria-label="Previous"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6v12M18 6l-8 6 8 6Z"/></svg></button>
+          <button id="playButton" class="play" type="button" aria-label="Play"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 9 6-9 6Z"/></svg></button>
+          <button id="nextButton" type="button" aria-label="Next"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6v12M6 6l8 6-8 6Z"/></svg></button>
+          <button id="repeatButton" type="button" aria-label="Repeat off" title="Repeat off"><svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></button>
+        </div>
+        <div class="progress-row">
+          <span id="currentTime">0:00</span>
+          <input id="seekBar" type="range" min="0" max="1000" value="0" aria-label="Seek">
+          <span id="durationTime">0:00</span>
+        </div>
+      </div>
+      <div class="player-right" style="position: relative;">
+        <div class="player-utility-cluster player-track-actions" aria-label="Current song actions">
+          <button id="likeButton" class="utility-button icon-button like-button" type="button" aria-label="Like current song" title="Like current song" disabled>
+            <span class="ui-icon icon-like" aria-hidden="true"></span>
+          </button>
+          <button id="shareButton" class="utility-button icon-button" type="button" aria-label="Share current song" title="Share current song" disabled>
+            <svg class="standard-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.3 10.8 7.4-4.4M8.3 13.2l7.4 4.4"/></svg>
+          </button>
+          <button id="currentDownloadButton" class="utility-button icon-button current-download-button" type="button" aria-label="Download current song" title="Download current song" disabled>
+            <span class="download-state offline-state" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="player-utility-cluster player-panel-actions" aria-label="Player tools">
+          <button id="queueButton" class="utility-button icon-button" type="button" aria-label="Show queue" title="Queue">
+            <span class="ui-icon icon-queue" aria-hidden="true"></span>
+          </button>
+          <button id="lyricsButton" class="utility-button icon-button" type="button" aria-label="Show lyrics" title="Lyrics">
+            <span class="ui-icon icon-lyrics" aria-hidden="true"></span>
+          </button>
+          <button id="lyricWidgetButton" class="utility-button icon-button" type="button" aria-label="Desktop lyrics" title="Desktop lyrics">
+            <span class="ui-icon icon-float-lyrics" aria-hidden="true"></span>
+          </button>
+          <button id="miniPlayerButton" class="utility-button icon-button" type="button" aria-label="Mini player" title="Mini player">
+            <span class="ui-icon icon-mini-player" aria-hidden="true"></span>
+          </button>
+          <button id="sleepButton" class="utility-button icon-button" type="button" aria-label="Sleep timer" title="Sleep timer">
+            <span class="ui-icon icon-sleep" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="player-output-controls">
+          <div class="audio-output-control">
+            <button id="audioOutputButton" class="audio-output-button" type="button" aria-label="Audio output device" title="Audio output">
+              <span class="ui-icon icon-audio-output" aria-hidden="true"></span>
+              <span id="audioOutputLabel">System output</span>
+            </button>
+            <div id="audioOutputMenu" class="audio-output-menu hidden" role="menu" aria-label="Audio output devices">
+              <div class="audio-output-head">
+                <strong>Audio output</strong>
+                <button type="button" data-audio-output-refresh>Refresh</button>
+              </div>
+              <div id="audioOutputList" class="audio-output-list"></div>
+              <p id="audioOutputStatus" class="audio-output-status">Using system output.</p>
+            </div>
+          </div>
+          <span id="playbackMode">Ready</span>
+          <input id="volumeBar" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+        </div>
+
+        <!-- Sleep Timer Menu -->
+        <div id="sleepMenu" class="sleep-menu hidden">
+          <div class="sleep-menu-header">Sleep timer</div>
+          <div class="sleep-options">
+            <button class="sleep-option" data-time="0">Off</button>
+            <button class="sleep-option" data-time="5">5 min</button>
+            <button class="sleep-option" data-time="15">15 min</button>
+            <button class="sleep-option" data-time="30">30 min</button>
+            <button class="sleep-option" data-time="60">60 min</button>
+          </div>
+          <div id="sleepCountdown" class="sleep-countdown hidden">Remaining: 0:00</div>
+        </div>
+      </div>
+      <audio id="audio" crossorigin="anonymous"></audio>
+      <div id="embedShell" class="embed-shell hidden">
+        <webview id="embedPlayer" partition="persist:auralane-login"></webview>
+      </div>
+    </footer>
+  </div>
+  <div id="commandPalette" class="command-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="commandTitle">
+    <div class="command-panel">
+      <div class="command-head">
+        <span class="eyebrow">Command</span>
+        <h2 id="commandTitle">Command Palette</h2>
+      </div>
+      <input id="commandInput" class="command-input" placeholder="Search music, jump pages, or run commands" autocomplete="off">
+      <div id="commandList" class="command-list"></div>
+    </div>
+  </div>
+  <div id="musicRecognitionDialog" class="recognition-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="recognitionTitle">
+    <div class="recognition-modal">
+      <header class="recognition-modal-head">
+        <div>
+          <span class="eyebrow">Song recognition</span>
+          <h2 id="recognitionTitle">Find the song around you</h2>
+          <p>Listen for a short sample, then compare playable matches from your music sources.</p>
+        </div>
+        <button id="recognitionCloseButton" class="secondary icon-only recognition-close-button" type="button" aria-label="Close song recognition" title="Close"></button>
+      </header>
+      <section class="recognition-capture-panel" aria-label="Recognition controls">
+        <div class="recognition-orb" aria-hidden="true">
+          <span class="recognition-orb-ring"></span>
+          <span class="ui-icon icon-recognition-start"></span>
+        </div>
+        <div class="recognition-capture-copy">
+          <strong>Choose where Auralane should listen</strong>
+          <span>System audio works best for music playing on this computer. Use the microphone for nearby speakers.</span>
+          <div class="recognition-source-row" role="group" aria-label="Audio source">
+            <button class="recognition-source-option active" data-recognition-source="system" type="button">
+              <span class="ui-icon icon-audio" aria-hidden="true"></span><span>System audio</span>
+            </button>
+            <button class="recognition-source-option" data-recognition-source="microphone" type="button">
+              <span class="ui-icon icon-microphone" aria-hidden="true"></span><span>Microphone</span>
+            </button>
+          </div>
+        </div>
+        <button id="recognitionStartButton" class="recognition-start-button" type="button" aria-label="Start listening" title="Start listening">
+          <span class="recognition-start-icon ui-icon icon-recognition-start" aria-hidden="true"></span>
+          <span class="recognition-start-label">Start listening</span>
+        </button>
+      </section>
+      <div class="recognition-status-bar" role="status" aria-live="polite">
+        <span class="recognition-status-dot" aria-hidden="true"></span>
+        <p id="recognitionStatus">System audio captures audio shared by a window or screen.</p>
+      </div>
+      <section class="recognition-results-section" aria-labelledby="recognitionResultsTitle">
+        <div class="recognition-results-head">
+          <div><span class="eyebrow">Matches</span><h3 id="recognitionResultsTitle">Possible songs</h3></div>
+          <small>Choose a result to play it in Auralane.</small>
+        </div>
+        <div id="recognitionCandidates" class="recognition-candidates">
+          <div class="recognition-empty-state"><span class="ui-icon icon-audio" aria-hidden="true"></span><strong>Ready when you are</strong><small>Start listening to see possible matches here.</small></div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div id="qualityMenu" class="quality-menu hidden" role="menu"><button data-quality="auto">Auto</button><button data-quality="high">High</button><button data-quality="balanced">Balanced</button><button data-quality="data-saver">Data saver</button></div>
+  <div id="lyricsSearchPanel" class="lyrics-search-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="lyricsSearchTitleText">
+    <div class="lyrics-search-modal">
+      <div class="lyrics-search-modal-head">
+        <div>
+          <span class="eyebrow">Lyrics</span>
+          <h2 id="lyricsSearchTitleText">Search Lyrics</h2>
+          <p>Find a lyric source, edit it if needed, then save it for this song.</p>
+        </div>
+        <button id="lyricsCloseSearchButton" class="secondary icon-only modal-close-button" type="button" aria-label="Close lyrics search" title="Close">&times;</button>
+      </div>
+      <form id="lyricsSearchForm" class="lyrics-search-form">
+        <input id="lyricsSearchTitle" placeholder="Song title" autocomplete="off" aria-label="Lyrics song title">
+        <input id="lyricsSearchArtist" placeholder="Artist" autocomplete="off" aria-label="Lyrics artist">
+        <button id="lyricsSearchSubmit" class="lyrics-tool primary" type="submit">Find</button>
+      </form>
+      <div class="lyrics-search-provider-row" aria-label="Lyrics search providers">
+        <label><input id="lyricsSearchProviderNetease" type="checkbox"> NetEase Music</label>
+        <label><input id="lyricsSearchProviderMusixmatch" type="checkbox"> Musixmatch</label>
+        <label><input id="lyricsSearchProviderBetter" type="checkbox"> BetterLyrics</label>
+        <label><input id="lyricsSearchProviderLrclib" type="checkbox"> LRCLIB</label>
+        <label><input id="lyricsSearchProviderKugou" type="checkbox"> KuGou</label>
+        <label><input id="lyricsSearchProviderPaxsenix" type="checkbox"> Paxsenix</label>
+        <label><input id="lyricsSearchProviderLyricsPlus" type="checkbox"> LyricsPlus</label>
+        <label><input id="lyricsSearchProviderOvh" type="checkbox"> Lyrics.ovh</label>
+        <label><input id="lyricsSearchProviderTranscript" type="checkbox"> YouTube transcript</label>
+      </div>
+      <div class="lyrics-search-body">
+        <div class="lyrics-picker-column">
+          <div class="lyrics-picker-heading">
+            <strong>Results</strong>
+            <span>Pick one source</span>
+          </div>
+          <div id="lyricsCandidateList" class="lyrics-candidate-list"></div>
+        </div>
+        <div class="lyrics-editor">
+          <div class="lyrics-picker-heading">
+            <strong>Edit before saving</strong>
+            <span id="lyricsCandidateMeta">Choose a result.</span>
+          </div>
+          <textarea id="lyricsEditText" spellcheck="false" placeholder="Lyrics will appear here. Edit before saving if needed."></textarea>
+          <div class="lyrics-editor-actions">
+            <button id="lyricsPreviewCandidateButton" class="lyrics-tool" type="button" disabled>Preview</button>
+            <button id="lyricsUseCandidateButton" class="lyrics-tool primary" type="button" disabled>Use</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="lyricsTimelinePanel" class="lyrics-timeline-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="lyricsTimelineTitleText">
+    <div class="lyrics-timeline-modal">
+      <div class="lyrics-timeline-head">
+        <div>
+          <span class="eyebrow">Lyrics</span>
+          <h2 id="lyricsTimelineTitleText">Timeline Editor</h2>
+          <p>Set each lyric line to the current playback time or nudge it in small steps.</p>
+        </div>
+        <button id="lyricsTimelineCloseButton" class="secondary icon-only modal-close-button" type="button" aria-label="Close timeline editor" title="Close">&times;</button>
+      </div>
+      <div class="lyrics-waveform-shell">
+        <canvas id="lyricsTimelineWaveform" class="lyrics-timeline-waveform" width="1200" height="132" aria-label="Audio waveform and playback position"></canvas>
+        <span id="lyricsTimelineWaveformStatus">Play the song to view its live waveform. Click to seek.</span>
+      </div>
+      <div class="lyrics-tap-timing">
+        <div>
+          <strong>Spacebar timing</strong>
+          <span id="lyricsTapTimingStatus">Play the song, then press Space on each line.</span>
+        </div>
+        <button id="lyricsTapTimingButton" class="secondary" type="button" aria-pressed="false">Start timing</button>
+      </div>
+      <div id="lyricsTimelineEditor" class="lyrics-timeline-editor hidden"></div>
+      <details class="lyrics-version-panel">
+        <summary>Correction history</summary>
+        <div id="lyricsVersionList" class="lyrics-version-list"></div>
+      </details>
+    </div>
+  </div>
+  <div id="moreMenu" class="more-menu hidden">
+    <button data-more-action="play" type="button">Play</button>
+    <button data-more-action="play-next" type="button">Play next</button>
+    <button data-more-action="queue" type="button">Add to queue</button>
+    <button data-more-action="radio" type="button">Start radio</button>
+    <button data-more-action="share" type="button">Share</button>
+    <button data-more-action="cache-offline" type="button">Cache offline</button>
+    <button data-more-action="remove-offline" type="button">Remove offline</button>
+    <button data-more-action="like" type="button">Like</button>
+    <button data-more-action="unlike" type="button">Unlike</button>
+    <button data-more-action="save-library" type="button">Save to library</button>
+    <button data-more-action="remove-library" type="button">Remove from library</button>
+    <button data-more-action="follow" type="button">Follow artist</button>
+    <button data-more-action="unfollow" type="button">Unfollow artist</button>
+    <button data-more-action="artist" type="button">Go to artist</button>
+    <button data-more-action="album" type="button">Go to album</button>
+    <button data-more-action="playlist" type="button">Add to playlist</button>
+    <button data-more-action="remove-queue" type="button">Remove from queue</button>
+    <button data-more-action="remove-history" type="button">Remove from history</button>
+    <button data-more-action="remove-playlist" type="button">Remove from this playlist</button>
+  </div>
+  <div id="playlistCreateDialog" class="modal-backdrop hidden">
+    <div class="playlist-modal playlist-create-dialog" role="dialog" aria-modal="true" aria-labelledby="playlistCreateDialogTitle">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">Playlist</span>
+          <h2 id="playlistCreateDialogTitle">Create playlist</h2>
+        </div>
+        <button id="playlistCreateDialogClose" class="secondary icon-only modal-close-button" type="button" aria-label="Close" title="Close">&times;</button>
+      </div>
+      <p class="status">Create an empty playlist or start it with the current queue.</p>
+      <form id="localPlaylistCreateForm" class="playlist-create-form">
+        <label>
+          <span>Name</span>
+          <input id="localPlaylistName" maxlength="80" placeholder="Playlist name" autocomplete="off">
+        </label>
+        <label>
+          <span>Save to</span>
+          <select id="playlistCreateDestination">
+            <option value="local">This device</option>
+            <option value="synced">YouTube Music</option>
+          </select>
+        </label>
+        <div class="playlist-create-dialog-actions">
+          <button class="secondary" type="submit">Create empty</button>
+          <button id="localPlaylistFromQueue" class="primary-action" type="button">Use current queue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div id="playlistModal" class="modal-backdrop hidden">
+    <div class="playlist-modal" role="dialog" aria-modal="true" aria-labelledby="playlistModalTitle">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">Playlist</span>
+          <h2 id="playlistModalTitle">Add to playlist</h2>
+        </div>
+        <button id="playlistModalClose" class="secondary icon-only modal-close-button" type="button" aria-label="Close" title="Close">&times;</button>
+      </div>
+      <span id="playlistModalStatus" class="status">Loading playlists...</span>
+      <div id="playlistModalList" class="playlist-modal-list"></div>
+      <form id="playlistCreateForm" class="playlist-create">
+        <input id="playlistCreateInput" placeholder="New playlist name">
+        <button type="submit">Create and add</button>
+      </form>
+    </div>
+  </div>
+  <div id="playlistAddModal" class="modal-backdrop hidden">
+    <div class="playlist-modal playlist-add-modal" role="dialog" aria-modal="true" aria-labelledby="playlistAddModalTitle">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">Playlist</span>
+          <h2 id="playlistAddModalTitle">Add songs</h2>
+        </div>
+        <button id="playlistAddModalClose" class="secondary icon-only modal-close-button" type="button" aria-label="Close" title="Close">&times;</button>
+      </div>
+      <span id="playlistAddModalStatus" class="status">Search YouTube Music and add tracks to this playlist.</span>
+      <form id="playlistAddSearchForm" class="playlist-create playlist-add-search">
+        <input id="playlistAddSearchInput" placeholder="Search songs, artists, albums">
+        <button type="submit">Search</button>
+      </form>
+      <div id="playlistAddResults" class="playlist-add-results"></div>
+    </div>
+  </div>
+  <!-- Immersive Focus Mode Overlay -->
+  <div id="focusMode" class="focus-mode hidden">
+    <!-- Fluid Dynamic Glow Backdrop -->
+    <div id="focusBackdropArt" class="focus-backdrop-art"></div>
+    <div class="focus-bg">
+      <div id="focusGlow1" class="focus-glow-orb orb-1"></div>
+      <div id="focusGlow2" class="focus-glow-orb orb-2"></div>
+      <div id="focusGlow3" class="focus-glow-orb orb-3"></div>
+    </div>
+
+    <!-- Exit Close Button -->
+    <button id="focusCloseButton" class="focus-close" type="button" aria-label="Exit Focus Mode" title="Exit Focus Mode">&times;</button>
+
+    <!-- Immersive Container -->
+    <div class="focus-container">
+      <div class="focus-left">
+        <div id="focusArt" class="focus-art"></div>
+        <div class="focus-meta">
+          <h1 id="focusTitle">Song Title</h1>
+          <p id="focusArtist">Artist</p>
+        </div>
+      </div>
+      <div class="focus-right">
+        <div id="focusLyricsList" class="focus-lyrics-list">
+          <p class="status">Choose a song with synced lyrics.</p>
+        </div>
+        <button id="focusSyncButton" class="focus-sync-button hidden" type="button">Sync</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="i18n.generated.js"></script>
+  <script src="gameRules.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

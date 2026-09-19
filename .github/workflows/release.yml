@@ -39,7 +39,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force vendor/local-translate/runtime | Out-Null
           New-Item -ItemType Directory -Force vendor/local-translate/models | Out-Null
-      - run: npm run dist -- --win
+      - run: npm run dist -- --win --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: Auralane-Windows
@@ -59,6 +59,7 @@ jobs:
   macos:
     needs: verify
     strategy:
+      fail-fast: false
       matrix:
         include:
           - runner: macos-13
@@ -75,7 +76,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run dist -- --mac --${{ matrix.arch }}
+      - run: npm run dist -- --mac --${{ matrix.arch }} --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: Auralane-macOS-${{ matrix.arch }}

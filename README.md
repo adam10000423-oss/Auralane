@@ -13,6 +13,23 @@ Auralane is a desktop music player for YouTube Music, built with Electron. It co
 | macOS Apple silicon | [DMG / ZIP](https://github.com/adam10000423-oss/Auralane/releases/latest) | For M-series Macs. |
 | macOS Intel | [DMG / ZIP](https://github.com/adam10000423-oss/Auralane/releases/latest) | For Intel Macs. |
 
+### Which file should I download?
+
+Open the [latest release](https://github.com/adam10000423-oss/Auralane/releases/latest), then choose the file that matches your device:
+
+| Your device | Download this file | When to choose it |
+| --- | --- | --- |
+| Windows 10 or 11, 64-bit Intel/AMD | `Auralane-Setup-<version>-x64.exe` | Recommended for most Windows users. Installs Auralane and supports one-click automatic updates. |
+| Windows 10 or 11, 64-bit Intel/AMD without installation | `Auralane-Portable-<version>-x64.exe` | Runs directly without installing. Settings and app data are still stored on the computer. |
+| Mac with an M1, M2, M3, M4, or newer Apple chip | `Auralane-<version>-arm64.dmg` | Recommended Apple silicon installer image. |
+| Mac with an Intel processor | `Auralane-<version>-x64.dmg` | Installer image for Intel-based Macs. |
+| Apple silicon Mac using a ZIP archive | `Auralane-<version>-arm64.zip` | Alternative to the DMG when you prefer to extract the app manually. |
+| Intel Mac using a ZIP archive | `Auralane-<version>-x64.zip` | Alternative to the DMG when you prefer to extract the app manually. |
+
+To identify a Mac, open **Apple menu > About This Mac**. A value such as **Apple M1/M2/M3/M4** under **Chip** means Apple silicon; a value under **Processor** that says **Intel** means you need the x64 build.
+
+On Windows, open **Settings > System > About > System type**. The current Windows release is for **x64-based systems**; Windows on ARM is not currently provided as a native build.
+
 Unsigned macOS builds may require using **Open** from Finder's context menu on first launch. Release files and checksums are published on the [latest release page](https://github.com/adam10000423-oss/Auralane/releases/latest).
 
 ## Interface

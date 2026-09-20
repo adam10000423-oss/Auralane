@@ -7,6 +7,7 @@ const { InnerTubeClient } = require("../src/main/innertube.legacy");
 const { YouTube } = require("../src/main/innertube");
 const { compareLyricsQuality, lyricsWordTimingQuality, neteaseYrcToLrc, parseLyrics, sanitizeTranslationResult, translationLooksDegenerate, ttmlToLrc } = require("../src/main/lyrics");
 const { mergePlaybackSession } = require("../src/main/playbackSession");
+const { mergeMacUpdateMetadata } = require("./merge-mac-update-metadata");
 
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
@@ -102,6 +103,12 @@ assert.match(indexHtml, /id="sidebarReleaseNotice"[\s\S]*?id="sidebarReleaseDism
 assert.match(appSource, /IntersectionObserver[\s\S]*?settingsNavVisible[\s\S]*?renderSidebarUpdateNotice/, "The release notice must react to Settings visibility in the sidebar.");
 assert.match(appSource, /auralane:update-notice-dismissed:\$\{version\}/, "Release-notice dismissal must be scoped to a single version.");
 assert.match(mainSource, /if \(app\.isPackaged\)[\s\S]*?autoUpdater\.checkForUpdates/, "Every packaged app launch must check GitHub Releases.");
+const mergedMacUpdate = mergeMacUpdateMetadata(
+  "version: 1.0.3\nfiles:\n  - url: Auralane-1.0.3-x64.zip\n    sha512: x64zip\n    size: 10\n  - url: Auralane-1.0.3-x64.dmg\n    sha512: x64dmg\n    size: 11\npath: Auralane-1.0.3-x64.zip\nsha512: x64zip\nreleaseDate: '2026-09-20T00:00:00.000Z'\n",
+  "version: 1.0.3\nfiles:\n  - url: Auralane-1.0.3-arm64.zip\n    sha512: armzip\n    size: 12\n  - url: Auralane-1.0.3-arm64.dmg\n    sha512: armdmg\n    size: 13\npath: Auralane-1.0.3-arm64.zip\nsha512: armzip\nreleaseDate: '2026-09-20T00:01:00.000Z'\n"
+);
+assert.equal(mergedMacUpdate.files.length, 4, "Merged macOS update metadata must retain both architectures and package formats.");
+assert.equal(mergedMacUpdate.releaseDate, "2026-09-20T00:01:00.000Z", "Merged macOS metadata must keep the newest build date.");
 assert.match(appSource, /contextVersion !== state\.syncContextVersion/, "Sync worker must stop after an account context switch.");
 assert.match(appSource, /if \(!state\.auth\?\.signedIn\)/, "Guest UI must gate account-only synchronization.");
 assert.match(appSource, /state\.auth\?\.signedIn && state\.settings\.webFallback/, "Guest playback must never open the web fallback.");

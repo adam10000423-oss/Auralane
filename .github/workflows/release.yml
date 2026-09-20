@@ -54,17 +54,6 @@ jobs:
             dist/latest.yml
             dist/*.blockmap
             dist/SHA256SUMS-windows.txt
-      - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/v')
-        with:
-          name: Auralane 1.0.3
-          body_path: .github/release-notes/${{ github.ref_name }}.md
-          make_latest: true
-          files: |
-            dist/*.exe
-            dist/latest.yml
-            dist/*.blockmap
-            dist/SHA256SUMS-windows.txt
 
   macos:
     needs: verify
@@ -87,6 +76,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run dist -- --mac --${{ matrix.arch }} --publish never
+      - name: Preserve architecture update metadata
+        shell: bash
+        run: mv dist/latest-mac.yml "dist/latest-mac-${{ matrix.arch }}.yml"
       - name: Generate macOS checksums
         shell: bash
         run: |
@@ -98,18 +90,38 @@ jobs:
           path: |
             dist/*.dmg
             dist/*.zip
-            dist/latest-mac.yml
+            dist/latest-mac-${{ matrix.arch }}.yml
             dist/*.blockmap
             dist/SHA256SUMS-macos-${{ matrix.arch }}.txt
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Auralane-*
+          path: dist
+          merge-multiple: true
+      - name: Merge Intel and Apple silicon update metadata
+        run: node scripts/merge-mac-update-metadata.js dist/latest-mac-x64.yml dist/latest-mac-arm64.yml dist/latest-mac.yml
       - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/v')
         with:
           name: Auralane 1.0.3
           body_path: .github/release-notes/${{ github.ref_name }}.md
           make_latest: true
           files: |
+            dist/*.exe
             dist/*.dmg
             dist/*.zip
             dist/latest-mac.yml
+            dist/latest.yml
             dist/*.blockmap
-            dist/SHA256SUMS-macos-${{ matrix.arch }}.txt
+            dist/SHA256SUMS-*.txt

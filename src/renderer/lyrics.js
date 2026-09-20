@@ -281,9 +281,9 @@ function fitElement(element, preferredSize, minimumSize) {
 
 function applyDisplaySettings(settings = {}) {
   const opacity = Math.max(20, Math.min(95, Number(settings.opacity ?? settings.desktopLyricsOpacity ?? 65))) / 100;
-  const panelOpacity = 0.16 + opacity * 0.34;
+  const panelOpacity = 0.46 + opacity * 0.34;
   document.documentElement.style.setProperty("--panel-opacity", panelOpacity.toFixed(2));
-  document.documentElement.style.setProperty("--panel-hover-opacity", Math.min(0.72, panelOpacity + 0.16).toFixed(2));
+  document.documentElement.style.setProperty("--panel-hover-opacity", Math.min(0.86, panelOpacity + 0.08).toFixed(2));
   const font = ["system", "serif", "mono"].includes(settings.font) ? settings.font : "system";
   if (font === "system") document.documentElement.removeAttribute("data-font");
   else document.documentElement.dataset.font = font;
@@ -293,7 +293,37 @@ function applyTheme(themeColor) {
   if (!themeColor) return;
   document.documentElement.style.setProperty("--theme-color", themeColor);
   const rgb = parseRGB(themeColor);
-  if (rgb) document.documentElement.style.setProperty("--theme-color-rgb", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+  if (rgb) {
+    document.documentElement.style.setProperty("--theme-color-rgb", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+    const readable = readableLyricsAccent(rgb);
+    document.documentElement.style.setProperty("--lyrics-accent-rgb", `${readable.r}, ${readable.g}, ${readable.b}`);
+  }
+}
+
+function readableLyricsAccent(rgb) {
+  const color = {
+    r: Math.max(0, Math.min(255, Number(rgb.r) || 0)),
+    g: Math.max(0, Math.min(255, Number(rgb.g) || 0)),
+    b: Math.max(0, Math.min(255, Number(rgb.b) || 0))
+  };
+  while (relativeLuminance(color) < 0.5) {
+    color.r += (255 - color.r) * 0.1;
+    color.g += (255 - color.g) * 0.1;
+    color.b += (255 - color.b) * 0.1;
+  }
+  return {
+    r: Math.round(color.r),
+    g: Math.round(color.g),
+    b: Math.round(color.b)
+  };
+}
+
+function relativeLuminance({ r, g, b }) {
+  const channel = (value) => {
+    const normalized = value / 255;
+    return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+  };
+  return channel(r) * 0.2126 + channel(g) * 0.7152 + channel(b) * 0.0722;
 }
 
 function parseRGB(color) {

@@ -273,6 +273,11 @@ const els = {
   accountAvatar: document.getElementById("accountAvatar"),
   accountSaveProfileButton: document.getElementById("accountSaveProfileButton"),
   accountProfilesList: document.getElementById("accountProfilesList"),
+  accountSwitcher: document.getElementById("accountSwitcher"),
+  accountSwitcherCount: document.getElementById("accountSwitcherCount"),
+  accountSwitcherList: document.getElementById("accountSwitcherList"),
+  accountAddButton: document.getElementById("accountAddButton"),
+  accountManageButton: document.getElementById("accountManageButton"),
   searchForm: document.getElementById("searchForm"),
   searchInput: document.getElementById("searchInput"),
   musicRecognizeButton: document.getElementById("musicRecognizeButton"),
@@ -619,7 +624,14 @@ const els = {
   settingsBackupImport: document.getElementById("settingsBackupImport"),
   settingsBackupFile: document.getElementById("settingsBackupFile"),
   settingsResetLayout: document.getElementById("settingsResetLayout"),
+  sidebar: document.querySelector(".sidebar"),
+  settingsNav: document.querySelector('.nav[data-view="settings"]'),
   sidebarCollapseButton: document.getElementById("sidebarCollapseButton"),
+  sidebarReleaseNotice: document.getElementById("sidebarReleaseNotice"),
+  sidebarReleaseOpen: document.getElementById("sidebarReleaseOpen"),
+  sidebarReleaseDismiss: document.getElementById("sidebarReleaseDismiss"),
+  sidebarReleaseVersion: document.getElementById("sidebarReleaseVersion"),
+  githubUpdatesCard: document.getElementById("githubUpdatesCard"),
   shortcutPlayPause: document.getElementById("shortcutPlayPause"),
   shortcutNext: document.getElementById("shortcutNext"),
   shortcutPrevious: document.getElementById("shortcutPrevious"),
@@ -3098,6 +3110,16 @@ function withoutAccountTrackState(track = {}) {
 function resetAccountScopedState() {
   state.syncContextVersion += 1;
   state.syncOutboxProcessing = false;
+  state.playbackRequestId += 1;
+  try {
+    els.audio.pause();
+    els.audio.removeAttribute("src");
+    els.audio.load();
+  } catch {}
+  stopEmbedPlayer();
+  state.playbackStreams.clear();
+  state.playing = false;
+  state.playbackMode = "idle";
   state.likedData = null;
   state.likedTrackIds.clear();
   state.likedRemovalTombstones.clear();
@@ -3175,6 +3197,7 @@ function renderAccountProfiles(profiles = state.accountProfiles) {
   if (!els.accountProfilesList) return;
   const items = Array.isArray(profiles) ? profiles : [];
   state.accountProfiles = items;
+  renderAccountSwitcher(items);
   if (!items.length) {
     els.accountProfilesList.innerHTML = `<p class="status">No saved accounts yet.</p>`;
     return;
@@ -3199,6 +3222,65 @@ function renderAccountProfiles(profiles = state.accountProfiles) {
       </div>
     `;
   }).join("");
+}
+
+function setAccountSwitcherOpen(open) {
+  if (!els.accountSwitcher || !els.loginButton) return;
+  const visible = Boolean(open);
+  els.accountSwitcher.classList.toggle("hidden", !visible);
+  els.loginButton.setAttribute("aria-expanded", String(visible));
+}
+
+function renderAccountSwitcher(profiles = state.accountProfiles) {
+  if (!els.accountSwitcherList) return;
+  const items = Array.isArray(profiles) ? profiles : [];
+  if (els.accountSwitcherCount) els.accountSwitcherCount.textContent = String(items.length);
+  if (!items.length) {
+    els.accountSwitcherList.innerHTML = `<p class="account-switcher-empty">${escapeText(componentText("No saved accounts yet."))}</p>`;
+    return;
+  }
+  els.accountSwitcherList.innerHTML = items.map((profile) => {
+    const name = profile.name || profile.email || componentText("Saved account");
+    const subtitle = profile.email || profile.channelHandle || componentText("YouTube Music account");
+    return `
+      <button class="account-switcher-row ${profile.active ? "active" : ""}" data-quick-account-switch="${escapeText(profile.id)}" type="button" ${profile.active ? "disabled" : ""}>
+        <span class="account-switcher-avatar" style="background-image:${thumbnailStyle(profile.thumbnail || "")}">${profile.thumbnail ? "" : escapeText(name.trim().charAt(0).toUpperCase())}</span>
+        <span class="account-switcher-copy">
+          <strong>${escapeText(name)}</strong>
+          <small>${escapeText(profile.active ? componentText("Current account") : subtitle)}</small>
+        </span>
+        <span class="account-switcher-state" aria-hidden="true">${profile.active ? standardIconSvg("check") : ""}</span>
+      </button>
+    `;
+  }).join("");
+}
+
+async function activateAccountProfile(profileId, trigger) {
+  if (!profileId || !window.metro?.switchAccountProfile) return;
+  const originalLabel = trigger?.textContent || "";
+  if (trigger) {
+    trigger.disabled = true;
+    if (trigger.matches("[data-account-switch]")) trigger.textContent = componentText("Switching...");
+  }
+  setAccountSwitcherOpen(false);
+  try {
+    const auth = await window.metro.switchAccountProfile(profileId);
+    renderAuth(auth);
+    state.homeLoaded = false;
+    state.likedData = null;
+    state.libraryData = null;
+    state.playlistsData = null;
+    state.historyData = null;
+    await loadHome();
+    toast(componentText("Account switched."));
+  } catch (error) {
+    toast(error.message || componentText("Account profile action failed."), true);
+    await refreshAccountProfiles();
+    if (trigger) {
+      trigger.disabled = false;
+      if (originalLabel) trigger.textContent = originalLabel;
+    }
+  }
 }
 
 async function refreshAccountProfiles() {
@@ -14861,14 +14943,34 @@ els.commandPalette.addEventListener("click", (event) => {
   if (event.target === els.commandPalette) closeCommandPalette();
 });
 
-els.loginButton.addEventListener("click", () => {
-  if (state.auth?.signedIn || state.auth?.account?.name || state.auth?.account?.email) {
-    switchView("account");
+els.loginButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  if (state.auth?.signedIn || state.accountProfiles.length) {
+    setAccountSwitcherOpen(els.accountSwitcher?.classList.contains("hidden"));
     return;
   }
   window.metro.login();
 });
 els.accountLogin.addEventListener("click", () => window.metro.login());
+els.accountAddButton?.addEventListener("click", () => {
+  setAccountSwitcherOpen(false);
+  window.metro.login();
+});
+els.accountManageButton?.addEventListener("click", () => {
+  setAccountSwitcherOpen(false);
+  switchView("account");
+});
+els.accountSwitcherList?.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-quick-account-switch]");
+  if (!button || button.disabled) return;
+  await activateAccountProfile(button.dataset.quickAccountSwitch, button);
+});
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".account-menu-shell")) setAccountSwitcherOpen(false);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") setAccountSwitcherOpen(false);
+});
 els.logoutButton.addEventListener("click", async () => {
   renderAuth(await window.metro.logout());
   state.homeLoaded = false;
@@ -14910,17 +15012,7 @@ els.accountProfilesList?.addEventListener("click", async (event) => {
   if (!profileId) return;
   try {
     if (switchButton) {
-      switchButton.disabled = true;
-      switchButton.textContent = "Switching...";
-      const auth = await window.metro.switchAccountProfile(profileId);
-      renderAuth(auth);
-      state.homeLoaded = false;
-      state.likedData = null;
-      state.libraryData = null;
-      state.playlistsData = null;
-      state.historyData = null;
-      await loadHome();
-      toast("Account switched.");
+      await activateAccountProfile(profileId, switchButton);
     } else {
       const profiles = await window.metro.deleteAccountProfile(profileId);
       renderAccountProfiles(profiles);
@@ -17294,9 +17386,77 @@ function renderUpdateEvent(event = {}) {
   els.updateInstallButton?.classList.toggle("hidden", type !== "downloaded");
   els.updateProgress?.classList.toggle("hidden", type !== "progress");
   if (type === "progress" && els.updateProgress) els.updateProgress.value = Number(event.percent || 0);
+  if (type === "available") setAvailableUpdateVersion(event.version || "new");
+  if (type === "current") setAvailableUpdateVersion("");
+}
+
+let availableUpdateVersion = "";
+let settingsNavVisible = false;
+
+function updateNoticeDismissalKey(version = availableUpdateVersion) {
+  return version ? `auralane:update-notice-dismissed:${version}` : "";
+}
+
+function updateNoticeWasDismissed() {
+  const key = updateNoticeDismissalKey();
+  if (!key) return false;
+  try { return localStorage.getItem(key) === "1"; } catch { return false; }
+}
+
+function renderSidebarUpdateNotice() {
+  const available = Boolean(availableUpdateVersion);
+  els.settingsNav?.classList.toggle("update-available", available);
+  if (els.sidebarReleaseVersion) {
+    els.sidebarReleaseVersion.textContent = availableUpdateVersion && availableUpdateVersion !== "new"
+      ? `v${availableUpdateVersion}`
+      : "";
+  }
+  const showNotice = available && !settingsNavVisible && !updateNoticeWasDismissed();
+  els.sidebarReleaseNotice?.classList.toggle("hidden", !showNotice);
+}
+
+function setAvailableUpdateVersion(version = "") {
+  availableUpdateVersion = String(version || "").replace(/^v/i, "");
+  renderSidebarUpdateNotice();
+}
+
+function measureSettingsNavVisibility() {
+  if (!els.sidebar || !els.settingsNav) return;
+  const root = els.sidebar.getBoundingClientRect();
+  const target = els.settingsNav.getBoundingClientRect();
+  settingsNavVisible = target.top >= root.top && target.bottom <= root.bottom;
+  renderSidebarUpdateNotice();
+}
+
+function setupSidebarUpdateNotice() {
+  if (!els.sidebar || !els.settingsNav) return;
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(([entry]) => {
+      settingsNavVisible = Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.8);
+      renderSidebarUpdateNotice();
+    }, { root: els.sidebar, threshold: [0, 0.8, 1] });
+    observer.observe(els.settingsNav);
+  }
+  els.sidebar.addEventListener("scroll", measureSettingsNavVisibility, { passive: true });
+  window.addEventListener("resize", measureSettingsNavVisibility, { passive: true });
+  requestAnimationFrame(measureSettingsNavVisibility);
 }
 
 els.sidebarCollapseButton?.addEventListener("click", () => applySidebarState(!state.settings.sidebarCollapsed));
+els.sidebarReleaseDismiss?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const key = updateNoticeDismissalKey();
+  if (key) {
+    try { localStorage.setItem(key, "1"); } catch {}
+  }
+  renderSidebarUpdateNotice();
+});
+els.sidebarReleaseOpen?.addEventListener("click", () => {
+  switchView("settings");
+  showSettingsCategory("general");
+  els.settingsNav?.scrollIntoView({ behavior: "smooth", block: "center" });
+  requestAnimationFrame(() => els.githubUpdatesCard?.scrollIntoView({ behavior: "smooth", block: "center" }));
+});
 document.addEventListener("pointerdown", (event) => {
   if (!els.lyricsQuickSettings?.open) return;
   if (event.target.closest("#lyricsQuickSettings")) return;
@@ -17484,6 +17644,7 @@ async function init() {
   console.log("[boot-ui] step 1/14: init() started");
   try {
     upgradeInterfaceIcons();
+    if (els.sidebarReleaseDismiss) els.sidebarReleaseDismiss.innerHTML = standardIconSvg("close");
     new MutationObserver(() => upgradeInterfaceIcons()).observe(document.body, {
       childList: true,
       subtree: true
@@ -17493,6 +17654,7 @@ async function init() {
     console.log("[boot-ui] step 2/14: appearance & i18n setup");
     loadAppearanceSettings();
     applySidebarState(state.settings.sidebarCollapsed, false);
+    setupSidebarUpdateNotice();
     applyLyricsQuickSettings(false);
     console.log("[boot-ui] step 3/14: fetching shortcut settings via IPC");
     const shortcutSettings = await window.metro.getShortcuts?.();

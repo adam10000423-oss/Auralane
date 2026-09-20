@@ -29,6 +29,7 @@ const appSource = read("src/renderer/app.js");
 const stylesSource = read("src/renderer/styles.css");
 const preloadSource = read("src/preload.js");
 const mainSource = read("src/main/main.js");
+const storeSource = read("src/main/store.js");
 const lyricsSource = read("src/main/lyrics.js");
 const generatedI18nSource = read("src/renderer/i18n.generated.js");
 
@@ -90,6 +91,17 @@ assert.equal(signedInClient.context(true).user.onBehalfOfUser, "sync-id");
 assert.equal(typeof new YouTube({}).artistItems, "function", "YouTube facade must expose artist item pages.");
 
 assert.match(mainSource, /function requireSignedIn\(\)/, "Main process must guard account mutations.");
+assert.match(mainSource, /auralane-login-add-\$\{crypto\.randomUUID\(\)\}/, "Adding an account must use an isolated login session.");
+assert.match(mainSource, /async function replacePlaybackLoginSession[\s\S]*?clearStorageData[\s\S]*?cookies\.set/, "Switching accounts must replace the web playback session.");
+assert.match(mainSource, /ipcMain\.handle\("auth:switch-profile"[\s\S]*?replacePlaybackLoginSession\(profile\.cookie\)/, "Saved-account switching must also switch web playback credentials.");
+assert.match(preloadSource, /switchAccountProfile:.*auth:switch-profile/, "The renderer must expose saved-account switching through preload.");
+assert.match(indexHtml, /id="accountSwitcher"[\s\S]*?id="accountAddButton"[\s\S]*?id="accountManageButton"/, "The top bar must expose account switching and account management.");
+assert.match(storeSource, /profiles:[\s\S]*?cookie: encodeSecret\(profile\.cookie/, "Every saved account cookie must be encrypted before it is written to disk.");
+assert.doesNotMatch(indexHtml, /GitHub updates[\s\S]{0,80}new-badge/, "The GitHub updates heading must not carry a permanent New badge.");
+assert.match(indexHtml, /id="sidebarReleaseNotice"[\s\S]*?id="sidebarReleaseDismiss"/, "A dismissible sidebar release notice is required.");
+assert.match(appSource, /IntersectionObserver[\s\S]*?settingsNavVisible[\s\S]*?renderSidebarUpdateNotice/, "The release notice must react to Settings visibility in the sidebar.");
+assert.match(appSource, /auralane:update-notice-dismissed:\$\{version\}/, "Release-notice dismissal must be scoped to a single version.");
+assert.match(mainSource, /if \(app\.isPackaged\)[\s\S]*?autoUpdater\.checkForUpdates/, "Every packaged app launch must check GitHub Releases.");
 assert.match(appSource, /contextVersion !== state\.syncContextVersion/, "Sync worker must stop after an account context switch.");
 assert.match(appSource, /if \(!state\.auth\?\.signedIn\)/, "Guest UI must gate account-only synchronization.");
 assert.match(appSource, /state\.auth\?\.signedIn && state\.settings\.webFallback/, "Guest playback must never open the web fallback.");

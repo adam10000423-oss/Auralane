@@ -113,6 +113,8 @@ let miniWindow = null;
 let miniAlwaysOnTop = true;
 let miniDragState = null;
 let installUpdateAfterDownload = false;
+const PLAYBACK_LOGIN_PARTITION = "persist:auralane-login";
+const DEFAULT_UPDATE_REPOSITORY = "adam10000423-oss/Auralane";
 const canonicalArtistCache = new Map();
 const artworkColorCache = new Map();
 
@@ -1041,6 +1043,26 @@ async function getMusicCookies(loginSession) {
   return cookieHeader(cookies);
 }
 
+async function replacePlaybackLoginSession(cookie = "") {
+  const playbackSession = session.fromPartition(PLAYBACK_LOGIN_PARTITION);
+  await playbackSession.clearStorageData({
+    storages: ["cookies", "localstorage", "indexdb", "cachestorage", "serviceworkers"]
+  });
+  const parsed = parseCookieString(cookie);
+  for (const [name, value] of Object.entries(parsed)) {
+    if (!name || value === undefined || value === null) continue;
+    await playbackSession.cookies.set({
+      url: "https://music.youtube.com",
+      name,
+      value: String(value),
+      path: "/",
+      secure: true,
+      sameSite: "no_restriction"
+    });
+  }
+  await playbackSession.cookies.flushStore();
+}
+
 async function getYtConfig(win) {
   try {
     return await win.webContents.executeJavaScript(`
@@ -1085,6 +1107,12 @@ async function validateAndSaveLogin(cookie, ytConfig) {
     setYouTubeAuth(previousState);
     throw new Error("Could not read account info from YouTube Music.");
   }
+  try {
+    await replacePlaybackLoginSession(cookie);
+  } catch (error) {
+    setYouTubeAuth(previousState);
+    throw error;
+  }
   state = { ...nextState, account };
   upsertCurrentAccountProfile();
   writeStore(state);
@@ -1093,12 +1121,24 @@ async function validateAndSaveLogin(cookie, ytConfig) {
 }
 
 function profileKey(account = {}, cookie = "") {
-  const value = account.email || account.channelHandle || account.name || authCookieValue(cookie) || Date.now();
+  const value = account.email || account.channelHandle || authCookieValue(cookie) || account.name || Date.now();
   const encoded = Buffer.from(String(value), "utf8")
     .toString("base64")
     .replace(/[^a-z0-9]/gi, "")
     .slice(0, 36);
   return `profile-${encoded || Date.now()}`;
+}
+
+function matchingAccountProfile(account = {}, cookie = "") {
+  const email = String(account.email || "").trim().toLocaleLowerCase();
+  const channelHandle = String(account.channelHandle || "").trim().toLocaleLowerCase();
+  const id = profileKey(account, cookie);
+  return (state.profiles || []).find((profile) => {
+    if (profile.id === id) return true;
+    const profileEmail = String(profile.account?.email || profile.email || "").trim().toLocaleLowerCase();
+    const profileHandle = String(profile.account?.channelHandle || profile.channelHandle || "").trim().toLocaleLowerCase();
+    return Boolean((email && profileEmail === email) || (channelHandle && profileHandle === channelHandle));
+  }) || null;
 }
 
 function safeProfile(profile = {}) {
@@ -1121,15 +1161,15 @@ function safeAccountProfiles() {
 
 function activeProfileId() {
   if (!state.cookie && !state.account) return "";
-  const currentId = profileKey(state.account || {}, state.cookie || "");
-  return (state.profiles || []).find((profile) => profile.id === currentId)?.id || currentId;
+  const currentProfile = matchingAccountProfile(state.account || {}, state.cookie || "");
+  return currentProfile?.id || profileKey(state.account || {}, state.cookie || "");
 }
 
 function upsertCurrentAccountProfile() {
   if (!state.cookie || !state.account) return null;
-  const id = profileKey(state.account, state.cookie);
   const now = new Date().toISOString();
-  const existing = (state.profiles || []).find((profile) => profile.id === id);
+  const existing = matchingAccountProfile(state.account, state.cookie);
+  const id = existing?.id || profileKey(state.account, state.cookie);
   const profile = {
     ...(existing || {}),
     id,
@@ -1242,14 +1282,15 @@ function filterAccountUnlikes(result) {
   };
 }
 
-function openLoginWindow() {
+async function openLoginWindow() {
   if (loginWindow && !loginWindow.isDestroyed()) {
     loginWindow.focus();
     return;
   }
 
-  const loginPartition = "persist:auralane-login";
-  const loginSession = session.fromPartition(loginPartition);
+  const loginPartition = `auralane-login-add-${crypto.randomUUID()}`;
+  const loginSession = session.fromPartition(loginPartition, { cache: false });
+  await loginSession.clearStorageData();
   loginWindow = new BrowserWindow({
     width: 980,
     height: 760,
@@ -1266,16 +1307,20 @@ function openLoginWindow() {
     }
   });
 
+  let loginCompletionPending = false;
   const tryComplete = async () => {
+    if (loginCompletionPending) return;
     const currentUrl = loginWindow?.webContents.getURL() || "";
     if (!currentUrl.startsWith("https://music.youtube.com")) return;
     const cookie = await getMusicCookies(loginSession);
     if (!authCookieValue(cookie)) return;
+    loginCompletionPending = true;
     const ytConfig = await getYtConfig(loginWindow);
     try {
       await validateAndSaveLogin(cookie, ytConfig);
       loginWindow?.close();
     } catch (error) {
+      loginCompletionPending = false;
       mainWindow?.webContents.send("app:error", error.message);
     }
   };
@@ -1284,7 +1329,10 @@ function openLoginWindow() {
   loginWindow.webContents.on("did-navigate", () => { tryComplete(); });
   loginWindow.webContents.on("did-navigate-in-page", () => { tryComplete(); });
 
-  loginWindow.on("closed", () => { loginWindow = null; });
+  loginWindow.on("closed", () => {
+    loginWindow = null;
+    loginSession.clearStorageData().catch(() => {});
+  });
 
   loginWindow.loadURL("https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fmusic.youtube.com");
 }
@@ -1292,7 +1340,7 @@ function openLoginWindow() {
 function registerIpc() {
   // ── Auth ──
   ipcMain.handle("auth:status", () => authSummary());
-  ipcMain.handle("auth:login", () => { openLoginWindow(); return { opened: true }; });
+  ipcMain.handle("auth:login", async () => { await openLoginWindow(); return { opened: true }; });
   ipcMain.handle("auth:profiles", () => safeAccountProfiles());
   ipcMain.handle("auth:save-profile", () => {
     const profile = upsertCurrentAccountProfile();
@@ -1316,8 +1364,10 @@ function registerIpc() {
     let account = null;
     try {
       account = await youtube.accountInfo();
+      await replacePlaybackLoginSession(profile.cookie);
     } catch (error) {
       setYouTubeAuth(previousState);
+      await replacePlaybackLoginSession(previousState.cookie || "").catch(() => {});
       throw error;
     }
     if (!account) {
@@ -1330,8 +1380,14 @@ function registerIpc() {
     mainWindow?.webContents.send("auth:changed", authSummary());
     return authSummary();
   });
-  ipcMain.handle("auth:delete-profile", (_event, profileId) => {
+  ipcMain.handle("auth:delete-profile", async (_event, profileId) => {
+    const deletingActiveProfile = activeProfileId() === profileId;
     state.profiles = (state.profiles || []).filter((item) => item.id !== profileId);
+    if (deletingActiveProfile) {
+      state = { ...state, cookie: "", visitorData: "", dataSyncId: "", account: null };
+      setYouTubeAuth(state);
+      await replacePlaybackLoginSession("");
+    }
     writeStore(state);
     mainWindow?.webContents.send("auth:changed", authSummary());
     return safeAccountProfiles();
@@ -1504,11 +1560,12 @@ function registerIpc() {
     return { ok: true };
   });
   ipcMain.handle("auth:logout", async () => {
+    const currentProfileId = activeProfileId();
+    state.profiles = (state.profiles || []).filter((profile) => profile.id !== currentProfileId);
     state = { ...state, cookie: "", visitorData: "", dataSyncId: "", account: null };
     setYouTubeAuth(state);
     writeStore(state);
-    const loginSession = session.fromPartition("persist:auralane-login");
-    await loginSession.clearStorageData({ storages: ["cookies", "localstorage", "indexdb", "cachestorage"] });
+    await replacePlaybackLoginSession("");
     const summary = authSummary();
     mainWindow?.webContents.send("auth:changed", summary);
     return summary;
@@ -1518,8 +1575,7 @@ function registerIpc() {
     await offlineCache?.clear?.();
     state = readStore();
     setYouTubeAuth(state);
-    const loginSession = session.fromPartition("persist:auralane-login");
-    await loginSession.clearStorageData();
+    await replacePlaybackLoginSession("");
     const summary = authSummary();
     mainWindow?.webContents.send("auth:changed", summary);
     return summary;
@@ -1606,9 +1662,9 @@ function registerIpc() {
     registerGlobalShortcuts();
     return state.shortcuts;
   });
-  ipcMain.handle("update:status", () => ({ packaged: app.isPackaged, version: app.getVersion(), repository: state.updateRepository || "" }));
+  ipcMain.handle("update:status", () => ({ packaged: app.isPackaged, version: app.getVersion(), repository: state.updateRepository || DEFAULT_UPDATE_REPOSITORY }));
   ipcMain.handle("update:check", async (_event, repository) => {
-    const normalized = configureUpdater(repository || state.updateRepository);
+    const normalized = configureUpdater(repository || state.updateRepository || DEFAULT_UPDATE_REPOSITORY);
     state.updateRepository = normalized;
     writeStore(state);
     if (!app.isPackaged) return { packaged: false, version: app.getVersion(), repository: normalized };
@@ -1981,8 +2037,13 @@ app.whenReady().then(async () => {
     state = {
       cookie: "", visitorData: "", dataSyncId: "", account: null, profiles: [], queue: [],
       playbackSession: null, recognitionHistory: [], localMusicLibrary: [], localMusicFolders: [],
-      shortcuts: {}, updateRepository: "", lyricWindowActive: false, lyricWindowBounds: null
+      shortcuts: {}, updateRepository: DEFAULT_UPDATE_REPOSITORY, lyricWindowActive: false, lyricWindowBounds: null
     };
+  }
+  try {
+    await replacePlaybackLoginSession(state.cookie || "");
+  } catch (error) {
+    console.warn("[boot]   playback account session could not be restored:", error?.message || error);
   }
 
   console.log("[boot] step 3/10: constructing PoToken/YouTube");
@@ -2052,10 +2113,10 @@ app.whenReady().then(async () => {
   createTray();
   registerGlobalShortcuts();
 
-  if (app.isPackaged && state.updateRepository) {
+  if (app.isPackaged) {
     try {
-      configureUpdater(state.updateRepository);
-      setTimeout(() => autoUpdater.checkForUpdates().catch((error) => sendUpdateEvent("error", { message: error.message })), 8000);
+      configureUpdater(state.updateRepository || DEFAULT_UPDATE_REPOSITORY);
+      setTimeout(() => autoUpdater.checkForUpdates().catch((error) => sendUpdateEvent("error", { message: error.message })), 2500);
     } catch (error) {
       sendUpdateEvent("error", { message: error.message });
     }

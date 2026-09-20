@@ -33,6 +33,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Read package version
+        id: version
+        shell: bash
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
       - run: npm ci
       - name: Prepare optional local translation directories
         shell: pwsh
@@ -40,6 +44,12 @@ jobs:
           New-Item -ItemType Directory -Force vendor/local-translate/runtime | Out-Null
           New-Item -ItemType Directory -Force vendor/local-translate/models | Out-Null
       - run: npm run dist -- --win --publish never
+      - name: Generate Windows checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -Filter *.exe | Sort-Object Name | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name
+          } | Set-Content dist/SHA256SUMS-windows.txt
       - uses: actions/upload-artifact@v4
         with:
           name: Auralane-Windows
@@ -47,13 +57,18 @@ jobs:
             dist/*.exe
             dist/latest.yml
             dist/*.blockmap
+            dist/SHA256SUMS-windows.txt
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v')
         with:
+          name: Auralane ${{ steps.version.outputs.version }}
+          body_path: .github/release-notes/${{ github.ref_name }}.md
+          make_latest: true
           files: |
             dist/*.exe
             dist/latest.yml
             dist/*.blockmap
+            dist/SHA256SUMS-windows.txt
 
   macos:
     needs: verify
@@ -74,8 +89,17 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Read package version
+        id: version
+        shell: bash
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
       - run: npm ci
       - run: npm run dist -- --mac --${{ matrix.arch }} --publish never
+      - name: Generate macOS checksums
+        shell: bash
+        run: |
+          cd dist
+          shasum -a 256 *.dmg *.zip > "SHA256SUMS-macos-${{ matrix.arch }}.txt"
       - uses: actions/upload-artifact@v4
         with:
           name: Auralane-macOS-${{ matrix.arch }}
@@ -84,11 +108,16 @@ jobs:
             dist/*.zip
             dist/latest-mac.yml
             dist/*.blockmap
+            dist/SHA256SUMS-macos-${{ matrix.arch }}.txt
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v')
         with:
+          name: Auralane ${{ steps.version.outputs.version }}
+          body_path: .github/release-notes/${{ github.ref_name }}.md
+          make_latest: true
           files: |
             dist/*.dmg
             dist/*.zip
             dist/latest-mac.yml
             dist/*.blockmap
+            dist/SHA256SUMS-macos-${{ matrix.arch }}.txt

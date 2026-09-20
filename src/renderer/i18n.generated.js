@@ -678,7 +678,19 @@ window.AURALANE_COMPONENT_I18N = {
     "Clear local music": "Clear local music",
     "No local music yet": "No local music yet",
     "Official updates are published through GitHub Releases": "Official updates are published through GitHub Releases",
-    "Update now": "Update now"
+    "Update now": "Update now",
+    "Account profile action failed.": "Account profile action failed.",
+    "Account switched.": "Account switched.",
+    "Accounts": "Accounts",
+    "Add account": "Add account",
+    "Current account": "Current account",
+    "Manage accounts": "Manage accounts",
+    "Saved account": "Saved account",
+    "Switch account": "Switch account",
+    "Switching...": "Switching...",
+    "YouTube Music account": "YouTube Music account",
+    "Dismiss update notice": "Dismiss update notice",
+    "New release": "New release"
   },
   "zh-TW": {
     "01 / LYRICS": "01 / 歌詞",
@@ -1358,7 +1370,19 @@ window.AURALANE_COMPONENT_I18N = {
     "Clear local music": "清除本地音樂",
     "No local music yet": "尚無本地音樂",
     "Official updates are published through GitHub Releases": "官方更新透過 GitHub Releases 發布",
-    "Update now": "立即更新"
+    "Update now": "立即更新",
+    "Account profile action failed.": "帳戶設定檔操作失敗。",
+    "Account switched.": "帳號已切換。",
+    "Accounts": "帳戶",
+    "Add account": "新增帳戶",
+    "Current account": "往來帳戶",
+    "Manage accounts": "管理帳戶",
+    "Saved account": "已儲存的帳戶",
+    "Switch account": "切換帳戶",
+    "Switching...": "切換...",
+    "YouTube Music account": "YouTube Music帳戶",
+    "Dismiss update notice": "關閉更新通知",
+    "New release": "新發布"
   },
   "zh-CN": {
     "01 / LYRICS": "01 / 歌词",
@@ -2038,7 +2062,19 @@ window.AURALANE_COMPONENT_I18N = {
     "Clear local music": "清除本地音乐",
     "No local music yet": "暂无本地音乐",
     "Official updates are published through GitHub Releases": "官方更新通过 GitHub Releases 发布",
-    "Update now": "立即更新"
+    "Update now": "立即更新",
+    "Account profile action failed.": "帐户配置文件操作失败。",
+    "Account switched.": "帐号已切换。",
+    "Accounts": "账户",
+    "Add account": "添加帐户",
+    "Current account": "往来账户",
+    "Manage accounts": "管理账户",
+    "Saved account": "已保存的帐户",
+    "Switch account": "切换账户",
+    "Switching...": "切换...",
+    "YouTube Music account": "YouTube Music账户",
+    "Dismiss update notice": "关闭更新通知",
+    "New release": "新发布"
   },
   "ja": {
     "01 / LYRICS": "01 / 歌詞",
@@ -2718,7 +2754,19 @@ window.AURALANE_COMPONENT_I18N = {
     "Clear local music": "ローカル音楽を消去",
     "No local music yet": "ローカル音楽はまだありません",
     "Official updates are published through GitHub Releases": "公式アップデートは GitHub Releases を通じて公開されます",
-    "Update now": "今すぐアップデートしてください"
+    "Update now": "今すぐアップデートしてください",
+    "Account profile action failed.": "アカウント プロファイル アクションが失敗しました。",
+    "Account switched.": "アカウントが切り替わりました。",
+    "Accounts": "アカウント",
+    "Add account": "アカウントを追加",
+    "Current account": "当座預金口座",
+    "Manage accounts": "アカウントの管理",
+    "Saved account": "保存されたアカウント",
+    "Switch account": "アカウントを切り替える",
+    "Switching...": "切り替え中...",
+    "YouTube Music account": "YouTube Musicアカウント",
+    "Dismiss update notice": "更新通知を閉じる",
+    "New release": "新作リリース"
   },
   "ko": {
     "01 / LYRICS": "01 / 가사",
@@ -3398,6 +3446,18 @@ window.AURALANE_COMPONENT_I18N = {
     "Clear local music": "로컬 음악 지우기",
     "No local music yet": "아직 로컬 음악이 없습니다",
     "Official updates are published through GitHub Releases": "공식 업데이트는 GitHub 릴리스를 통해 게시됩니다.",
-    "Update now": "지금 업데이트"
+    "Update now": "지금 업데이트",
+    "Account profile action failed.": "계정 프로필 작업이 실패했습니다.",
+    "Account switched.": "계정이 전환되었습니다.",
+    "Accounts": "계정",
+    "Add account": "계정 추가",
+    "Current account": "당좌계좌",
+    "Manage accounts": "계정 관리",
+    "Saved account": "저장된 계정",
+    "Switch account": "계정 전환",
+    "Switching...": "전환 중...",
+    "YouTube Music account": "YouTube Music 계정",
+    "Dismiss update notice": "업데이트 알림 닫기",
+    "New release": "새로운 릴리스"
   }
 };

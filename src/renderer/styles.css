@@ -86,38 +86,12 @@ button.copy-confirmed::after {
 }
 
 .native-titlebar-icon {
-  width: 18px;
-  height: 18px;
+  width: 19px;
+  height: 19px;
   flex: 0 0 auto;
   display: block;
-  filter: drop-shadow(0 8px 14px rgba(var(--titlebar-color), 0.26));
-}
-
-.native-titlebar-icon .mark-panel {
-  fill: rgba(var(--titlebar-color), 0.24);
-  stroke: rgba(255, 255, 255, 0.18);
-  stroke-width: 1;
-}
-
-.native-titlebar-icon .mark-lane,
-.native-titlebar-icon .mark-cross,
-.native-titlebar-icon .mark-wave {
-  fill: none;
-  stroke: #ffffff;
-  stroke-width: 1.85;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.native-titlebar-icon .mark-wave {
-  stroke: rgba(255, 255, 255, 0.62);
-  stroke-width: 1.3;
-}
-
-.native-titlebar-icon .mark-core {
-  fill: rgb(var(--titlebar-color));
-  stroke: rgba(255, 255, 255, 0.82);
-  stroke-width: 0.7;
+  border-radius: 5px;
+  object-fit: cover;
 }
 
 .native-titlebar-name {
@@ -696,6 +670,138 @@ input:focus-visible {
 
 .account-button.signed-in .account-button-avatar {
   display: grid;
+}
+
+.account-menu-shell {
+  position: relative;
+  min-width: 0;
+  justify-self: end;
+}
+
+.account-menu-shell > .account-button {
+  width: 100%;
+}
+
+.account-switcher {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  width: min(330px, calc(100vw - 36px));
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 96%, #07080a);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.42);
+}
+
+.account-switcher-head {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 7px 7px;
+  color: var(--ink);
+}
+
+.account-switcher-head span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.account-switcher-list {
+  max-height: 280px;
+  display: grid;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.account-switcher-row {
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+}
+
+.account-switcher-row:hover:not(:disabled) {
+  border-color: rgba(var(--theme-color), 0.28);
+  background: rgba(var(--theme-color), 0.09);
+}
+
+.account-switcher-row.active {
+  border-color: rgba(var(--theme-color), 0.34);
+  background: rgba(var(--theme-color), 0.12);
+}
+
+.account-switcher-row:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.account-switcher-avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-3) center / cover;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.account-switcher-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.account-switcher-copy strong,
+.account-switcher-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-switcher-copy strong { font-size: 13px; }
+.account-switcher-copy small { color: var(--muted); font-size: 11px; }
+.account-switcher-state { width: 18px; height: 18px; color: rgb(var(--theme-color)); }
+.account-switcher-state .standard-icon { width: 18px; height: 18px; }
+
+.account-switcher-empty {
+  margin: 0;
+  padding: 12px 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.account-switcher-commands {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.account-switcher-commands button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  color: var(--ink);
+  background: var(--button);
+  font-weight: 800;
 }
 
 .secondary {
@@ -10657,8 +10763,7 @@ canvas.lyrics-vinyl-wave{
 .sidebar-collapse:active { transform: none !important; }
 .sidebar-collapse .standard-icon { width: 18px; height: 18px; }
 .sidebar-top-row {
-  position: sticky;
-  top: 0;
+  position: static;
   z-index: 6;
   width: 100%;
   height: 40px;
@@ -10766,6 +10871,91 @@ body.sidebar-collapsed .sidebar:not(:hover) .nav-group {
 }
 body.sidebar-collapsed .sidebar:not(:hover) > .nav-group:first-of-type {
   margin-top: 4px;
+}
+
+.sidebar .nav[data-view="settings"].update-available::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: #ff405c;
+  box-shadow: 0 0 0 3px rgba(255, 64, 92, 0.14);
+}
+
+.sidebar-release-notice {
+  position: fixed;
+  left: 16px;
+  bottom: calc(var(--player-height) + 14px);
+  z-index: 24;
+  width: 210px;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: stretch;
+  padding: 4px;
+  border: 1px solid rgba(255, 64, 92, 0.32);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 96%, #12070a);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
+}
+
+.sidebar-release-open {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  font-weight: 850;
+}
+
+.sidebar-release-open::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #ff405c;
+  box-shadow: 0 0 0 3px rgba(255, 64, 92, 0.13);
+}
+
+.sidebar-release-open:hover { background: rgba(255, 255, 255, 0.055); }
+.sidebar-release-open span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-release-open small { margin-left: auto; color: var(--muted); font-size: 10px; white-space: nowrap; }
+
+.sidebar-release-dismiss {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+}
+
+.sidebar-release-dismiss:hover { color: var(--ink); background: rgba(255, 255, 255, 0.07); }
+.sidebar-release-dismiss .standard-icon { width: 15px; height: 15px; }
+
+body.sidebar-collapsed .sidebar:not(:hover) + .sidebar-release-notice {
+  left: 9px;
+  width: 164px;
+}
+
+body.sidebar-collapsed .sidebar:not(:hover) + .sidebar-release-notice .sidebar-release-open {
+  padding-inline: 6px;
 }
 
 /* Action columns are fixed so hover cannot change the song text layout. */

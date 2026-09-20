@@ -123,8 +123,10 @@ Artist profiles combine biography, popular songs, radio, follow controls, and di
 - Full-screen listening mode with artwork-reactive visuals and uncluttered transport controls.
 - Multiple density options and a theme that can automatically follow the current song artwork.
 - English, Traditional Chinese, Simplified Chinese, Japanese, and Korean interface languages.
-- Account profile switching and secure local session storage through the operating system.
-- Automatic GitHub Release checks. The installed Windows build downloads, installs, and reopens a new version after one click on **Update now**.
+- Save up to eight accounts on one device, switch from the top bar at any time, and keep every session protected by the operating system's encrypted storage.
+- Account switches also isolate YouTube Music web playback, likes, library data, playlists, history, and cached playback URLs.
+- Automatic GitHub Release checks on every packaged-app launch, with a Settings red dot and a dismissible sidebar notice when Settings is outside the visible scroll area.
+- The installed Windows build downloads, installs, and reopens a new version after one click on **Update now**.
 
 ## Run from source
 
@@ -152,7 +154,7 @@ npm run dist
 
 Build output is written to `dist/`. Windows produces an NSIS installer and a portable executable. macOS packages are built on macOS runners for both Intel and Apple silicon.
 
-Creating a tag such as `v1.0.1` triggers the GitHub Actions release workflow and publishes the update metadata required by `electron-updater`.
+Creating a tag such as `v1.0.3` triggers the GitHub Actions release workflow, publishes separate Windows, Intel Mac, and Apple silicon packages, and uploads the metadata required by `electron-updater`.
 
 ## Privacy and security
 

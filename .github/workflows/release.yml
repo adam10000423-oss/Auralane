@@ -114,7 +114,7 @@ jobs:
         run: node scripts/merge-mac-update-metadata.js dist/latest-mac-x64.yml dist/latest-mac-arm64.yml dist/latest-mac.yml
       - uses: softprops/action-gh-release@v2
         with:
-          name: Auralane 1.0.3
+          name: Auralane ${{ github.ref_name }}
           body_path: .github/release-notes/${{ github.ref_name }}.md
           make_latest: true
           files: |

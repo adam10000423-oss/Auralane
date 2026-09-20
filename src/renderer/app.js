@@ -815,6 +815,8 @@ function upgradeInterfaceIcons() {
     [els.recognitionCloseButton, "close"],
     [els.focusCloseButton, "close"],
     [els.lyricsQuickReloadButton, "material-refresh"],
+    [els.collectionDownloadButton, "download"],
+    [els.likedDownloadButton, "download"],
     [els.likedFollowPlayingButton, "locate"],
     [els.likedRefreshButton, "material-refresh"]
   ];
@@ -3329,7 +3331,7 @@ function downloadStateHtml(item) {
   if (pending) return `<span class="download-state pending-state" aria-hidden="true"></span>`;
   if (failed) return `<span class="download-state failed-state" aria-hidden="true">!</span>`;
   if (downloaded) return `<span class="download-state check-state" aria-hidden="true">&#10003;</span>`;
-  return `<span class="download-state offline-state" aria-hidden="true"></span>`;
+  return `<span class="download-state offline-state" aria-hidden="true">${standardIconSvg("download", "standard-icon download-state-icon")}</span>`;
 }
 
 function downloadTriggerHtml(item) {

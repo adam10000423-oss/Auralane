@@ -1,7 +1,7 @@
 {
   "name": "auralane-desktop",
   "productName": "Auralane",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A polished desktop music player for YouTube Music with synced lyrics, translation, offline playback, and native mini-player experiences.",
   "main": "src/main/main.js",
   "private": false,

@@ -154,7 +154,7 @@ npm run dist
 
 Build output is written to `dist/`. Windows produces an NSIS installer and a portable executable. macOS packages are built on macOS runners for both Intel and Apple silicon.
 
-Creating a tag such as `v1.0.3` triggers the GitHub Actions release workflow, publishes separate Windows, Intel Mac, and Apple silicon packages, and uploads the metadata required by `electron-updater`.
+Creating a tag such as `v1.0.4` triggers the GitHub Actions release workflow, publishes separate Windows, Intel Mac, and Apple silicon packages, and uploads the metadata required by `electron-updater`.
 
 ## Privacy and security
 

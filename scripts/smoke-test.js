@@ -34,6 +34,11 @@ const storeSource = read("src/main/store.js");
 const lyricsSource = read("src/main/lyrics.js");
 const generatedI18nSource = read("src/renderer/i18n.generated.js");
 
+assert.match(appSource, /download: `<path d="M12 3v12M7 10l5 5 5-5M4 20h16"\/>`/, "Download actions must use the shared arrow-and-baseline icon.");
+assert.match(appSource, /standardIconSvg\("download", "standard-icon download-state-icon"\)/, "Track download controls must render the shared download icon.");
+assert.doesNotMatch(stylesSource, /\.download-state\.offline-state::(?:before|after)/, "The legacy CSS-drawn download icon must not return.");
+assert.match(stylesSource, /body\.sidebar-collapsed \.sidebar:not\(:hover\) \.nav-group > \.nav-label[\s\S]*?height: 21px;[\s\S]*?white-space: nowrap;/, "Collapsed sidebar section labels must reserve a language-independent height.");
+
 const i18nSandbox = { window: {} };
 vm.runInNewContext(generatedI18nSource, i18nSandbox, { filename: "i18n.generated.js" });
 const componentI18n = i18nSandbox.window.AURALANE_COMPONENT_I18N;

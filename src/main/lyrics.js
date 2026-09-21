@@ -1565,10 +1565,16 @@ function isCreditLine(text) {
 function expandParentheticalBackgroundLines(sourceLines = []) {
   const expanded = [];
   const tokenize = (value) => String(value || "").trim().split(/\s+/).filter(Boolean);
-  for (const sourceLine of sourceLines) {
+  for (let sourceIndex = 0; sourceIndex < sourceLines.length; sourceIndex += 1) {
+    const sourceLine = sourceLines[sourceIndex];
     const line = { ...sourceLine };
     const matches = [...String(line.text || "").matchAll(/\(([^()]+)\)/g)];
     if (line.isBackground || !matches.length) {
+      expanded.push(line);
+      continue;
+    }
+    const lineStart = line.time == null ? NaN : Number(line.time);
+    if (!Number.isFinite(lineStart)) {
       expanded.push(line);
       continue;
     }
@@ -1602,14 +1608,29 @@ function expandParentheticalBackgroundLines(sourceLines = []) {
       Number(line.time || 0),
       ...mainWords.map((word) => Number(word.end)).filter(Number.isFinite)
     );
-    const inferredDuration = 0.34;
+    const secondsPerToken = 0.38;
+    const inferredDuration = Math.max(0.52, backgroundTokens.length * secondsPerToken);
+    const nextTimedLine = sourceLines.slice(sourceIndex + 1).find((candidate) =>
+      candidate?.time != null && Number.isFinite(Number(candidate.time)) && Number(candidate.time) > lineStart
+    );
+    const mainTokenCount = Math.max(1, tokenize(mainText).length);
+    const estimatedLineSpan = Math.max(1.2, Math.min(10, mainTokenCount * 0.5 + 1.4));
+    const availableLineSpan = nextTimedLine
+      ? Math.max(0.1, Math.min(Number(nextTimedLine.time) - lineStart, estimatedLineSpan))
+      : estimatedLineSpan;
+    const originalText = String(line.text || "");
+    const firstParentheticalIndex = Math.max(0, Number(matches[0]?.index || 0));
+    const textWithoutParenthesesLength = Math.max(1, originalText.replace(/\s*\([^()]+\)/g, "").trim().length);
+    const placementRatio = Math.max(0, Math.min(1, firstParentheticalIndex / textWithoutParenthesesLength));
+    const inferredByPlacement = lineStart + Math.max(0, availableLineSpan - inferredDuration) * placementRatio;
+    const inferredTokenDuration = inferredDuration / Math.max(1, backgroundTokens.length);
     const inferredStart = Number.isFinite(firstTimedStart)
-      ? Math.max(Number(line.time || 0), firstTimedStart - (missingCount * inferredDuration))
-      : Math.max(Number(line.time || 0), mainEnd - Math.max(0.7, backgroundTokens.length * inferredDuration));
+      ? Math.max(lineStart, firstTimedStart - (missingCount * secondsPerToken))
+      : Math.max(lineStart, inferredByPlacement, mainEnd > lineStart ? mainEnd - inferredDuration : lineStart);
     const inferredWords = backgroundTokens.slice(0, missingCount).map((text, index) => ({
       text,
-      start: inferredStart + (index * inferredDuration),
-      end: inferredStart + ((index + 1) * inferredDuration)
+      start: inferredStart + (index * inferredTokenDuration),
+      end: inferredStart + ((index + 1) * inferredTokenDuration)
     }));
     const backgroundWords = [
       ...inferredWords,

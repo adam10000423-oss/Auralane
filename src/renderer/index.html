@@ -594,6 +594,12 @@
           </div>
           <div class="collection-controls">
             <label class="collection-search"><svg class="collection-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><input id="likedSearchInput" data-i18n-placeholder="search.liked" placeholder="Search liked songs"></label>
+            <select id="likedSortSelect" class="collection-sort" aria-label="Sort liked songs">
+              <option value="recent">Recently added</option>
+              <option value="title">Title A-Z</option>
+              <option value="artist">Artist A-Z</option>
+              <option value="duration">Duration</option>
+            </select>
           </div>
         </div>
         <div id="likedResults" class="liked-results"></div>

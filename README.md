@@ -48,8 +48,6 @@ Unsigned macOS builds may require using **Open** from Finder's context menu on f
 
 ### Full-screen lyrics
 
-![Full-screen synchronized and translated lyrics for Without You](docs/screenshots/05-focus-lyrics.png)
-
 Full-screen lyrics support word-by-word highlighting, translated lines, per-track timing adjustment, source switching, display controls, and artwork-reactive colors.
 
 ![Word-synchronized Counting Stars lyrics with Traditional Chinese translation](docs/screenshots/08-counting-stars-focus-lyrics.png)

@@ -91,7 +91,7 @@ const { autoUpdater } = require("electron-updater");
 const { transliterate } = require("transliteration");
 const { YouTube, parseCookieString } = require("./innertube");
 const { PoTokenProvider } = require("./poToken");
-const { findLyrics, searchLyricsCandidates, lyricsFromTranscriptResponse, lyricsTextFromLines, sanitizeTranslationResult, translateLyrics } = require("./lyrics");
+const { findLyrics, parseLyrics, searchLyricsCandidates, lyricsFromTranscriptResponse, lyricsTextFromLines, sanitizeTranslationResult, translateLyrics } = require("./lyrics");
 const { createOfflineCache } = require("./offlineCache");
 const { readStore, writeStore, clearStore } = require("./store");
 const { mergePlaybackSession } = require("./playbackSession");
@@ -433,7 +433,27 @@ function readCachedLyrics(trackId) {
   if (!trackId) return null;
   try {
     const value = JSON.parse(fs.readFileSync(lyricsCachePath(trackId), "utf8"));
-    return value?.result?.found && Array.isArray(value.result.lines) ? value : null;
+    if (!value?.result?.found || !Array.isArray(value.result.lines)) return null;
+    const hasLegacyBackgroundTiming = value.result.lines.some((line, index, lines) => {
+      if (!line?.isBackground || !line?.inferredBackground || !Number.isFinite(Number(line.time))) return false;
+      for (let previous = index - 1; previous >= 0; previous -= 1) {
+        if (lines[previous]?.isBackground) continue;
+        return Number.isFinite(Number(lines[previous]?.time))
+          && Math.abs(Number(line.time) - Number(lines[previous].time)) < 0.02;
+      }
+      return false;
+    });
+    if (hasLegacyBackgroundTiming && value.result.rawLyrics) {
+      const reparsedLines = parseLyrics(value.result.rawLyrics);
+      if (reparsedLines.length) {
+        return writeCachedLyrics(trackId, {
+          ...value.result,
+          lines: reparsedLines,
+          synced: reparsedLines.some((line) => line.time != null)
+        });
+      }
+    }
+    return value;
   } catch {
     return null;
   }
@@ -469,6 +489,7 @@ function registerOnlineAudioStream(playback = {}) {
     url: upstreamUrl,
     requestHeaders: playback.requestHeaders || {},
     mimeType: playback.mimeType || "audio/webm",
+    contentLength: Number(playback.contentLength || 0),
     expiresAt: Date.now() + Math.max(60, ttlSeconds - 60) * 1000
   });
   const now = Date.now();
@@ -491,7 +512,19 @@ async function proxyOnlineAudio(token, request, response) {
     return;
   }
   const headers = { ...entry.requestHeaders };
-  if (request.headers.range) headers.Range = request.headers.range;
+  if (request.headers.range) {
+    const openRange = String(request.headers.range).match(/^bytes=(\d+)-$/i);
+    if (openRange) {
+      const start = Number(openRange[1]);
+      const maximumEnd = start + (1024 * 1024) - 1;
+      const end = entry.contentLength > 0
+        ? Math.min(maximumEnd, entry.contentLength - 1)
+        : maximumEnd;
+      headers.Range = `bytes=${start}-${Math.max(start, end)}`;
+    } else {
+      headers.Range = request.headers.range;
+    }
+  }
   const controller = new AbortController();
   response.once("close", () => {
     if (!response.writableEnded) controller.abort();
@@ -1739,7 +1772,15 @@ function registerIpc() {
   ipcMain.handle("ytm:queue", async (_event, payload) => youtube.queue(payload || {}));
   ipcMain.handle("ytm:playback", async (_event, payload) => {
     try {
-      return registerOnlineAudioStream(await youtube.playback(payload.videoId, payload.playlistId || null, payload.quality || "auto"));
+      return registerOnlineAudioStream(await youtube.playback(
+        payload.videoId,
+        payload.playlistId || null,
+        payload.quality || "auto",
+        {
+          excludeItags: payload.excludeItags || [],
+          excludeClients: payload.excludeClients || []
+        }
+      ));
     } catch (error) {
       return { mode: "webview", reason: error.message || "Direct audio playback failed.", details: { videoId: payload.videoId } };
     }

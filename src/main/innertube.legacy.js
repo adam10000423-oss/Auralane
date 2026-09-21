@@ -1281,11 +1281,13 @@ function librarySourceSummary(page, count) {
   };
 }
 
-function chooseAudioFormat(response, quality = "auto") {
+function chooseAudioFormat(response, quality = "auto", options = {}) {
+  const excludedItags = new Set((options.excludeItags || []).map(Number).filter(Number.isFinite));
   const formats = response?.streamingData?.adaptiveFormats || [];
   const audio = formats
     .filter((format) => String(format.mimeType || "").startsWith("audio/"))
     .filter((format) => format.url)
+    .filter((format) => !excludedItags.has(Number(format.itag)))
     .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
   if (!audio.length) return null;
   if (quality === "data-saver") return audio.at(-1);
@@ -1947,7 +1949,7 @@ class InnerTubeClient {
     };
   }
 
-  async playback(videoId, playlistId = null, quality = "auto") {
+  async playback(videoId, playlistId = null, quality = "auto", options = {}) {
     const attempts = [];
     let details = {
       title: "",
@@ -1966,9 +1968,12 @@ class InnerTubeClient {
       }
     }
 
-    const orderedClients = poTokens
-      ? [{ client: WEB_REMIX, login: true }, ...STREAM_CLIENTS.filter(({ client }) => client !== WEB_REMIX)]
-      : STREAM_CLIENTS;
+    const excludedClients = new Set((options.excludeClients || []).map((value) => String(value || "").toUpperCase()));
+    // A valid WEB_REMIX player response can still carry media URLs that return
+    // 403. Keep the proven direct-stream clients first and retain WEB_REMIX as
+    // a later authenticated fallback instead of promoting it when PoTokens exist.
+    const orderedClients = STREAM_CLIENTS
+      .filter(({ client }) => !excludedClients.has(String(client.clientName || "").toUpperCase()));
     for (const attempt of orderedClients) {
       try {
         const body = { videoId, playlistId };
@@ -1990,8 +1995,16 @@ class InnerTubeClient {
           ...summary
         });
 
-        const format = chooseAudioFormat(response, quality);
+        const format = chooseAudioFormat(response, quality, options);
         if (!format) continue;
+
+        const availableAudioFormats = (response?.streamingData?.adaptiveFormats || [])
+          .filter((candidate) => String(candidate.mimeType || "").startsWith("audio/") && candidate.url)
+          .map((candidate) => ({
+            itag: Number(candidate.itag || 0),
+            mimeType: candidate.mimeType || "",
+            bitrate: Number(candidate.bitrate || 0)
+          }));
 
         const streamUrl = attempt.client.useWebPoTokens && poTokens?.streamingDataPoToken
           ? `${format.url}${format.url.includes("?") ? "&" : "?"}pot=${encodeURIComponent(poTokens.streamingDataPoToken)}`
@@ -2013,6 +2026,7 @@ class InnerTubeClient {
           audioSampleRate: format.audioSampleRate,
           contentLength: Number(format.contentLength || 0),
           expiresInSeconds: Number(response.streamingData?.expiresInSeconds || 0),
+          availableAudioFormats,
           attempts,
           details
         };

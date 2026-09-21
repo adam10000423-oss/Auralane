@@ -30,6 +30,7 @@ const appSource = read("src/renderer/app.js");
 const stylesSource = read("src/renderer/styles.css");
 const preloadSource = read("src/preload.js");
 const mainSource = read("src/main/main.js");
+const innerTubeSource = read("src/main/innertube.legacy.js");
 const storeSource = read("src/main/store.js");
 const lyricsSource = read("src/main/lyrics.js");
 const generatedI18nSource = read("src/renderer/i18n.generated.js");
@@ -38,6 +39,11 @@ assert.match(appSource, /download: `<path d="M12 3v12M7 10l5 5 5-5M4 20h16"\/>`/
 assert.match(appSource, /standardIconSvg\("download", "standard-icon download-state-icon"\)/, "Track download controls must render the shared download icon.");
 assert.doesNotMatch(stylesSource, /\.download-state\.offline-state::(?:before|after)/, "The legacy CSS-drawn download icon must not return.");
 assert.match(stylesSource, /body\.sidebar-collapsed \.sidebar:not\(:hover\) \.nav-group > \.nav-label[\s\S]*?height: 21px;[\s\S]*?white-space: nowrap;/, "Collapsed sidebar section labels must reserve a language-independent height.");
+assert.match(indexHtml, /id="likedSortSelect"[\s\S]*?value="recent"[\s\S]*?value="title"[\s\S]*?value="artist"[\s\S]*?value="duration"/, "Liked Songs must expose its four supported sort modes.");
+assert.match(appSource, /likedSortSelect\?\.addEventListener\("change"[\s\S]*?auralane:sort:likedView[\s\S]*?renderLiked\(\)/, "Liked Songs sorting must apply immediately and persist between launches.");
+assert.doesNotMatch(indexHtml + appSource + stylesSource, /data-liked-select|data-playlist-select|likedSelectedIds|playlistSelectedKeys|playlist-bulk-toolbar|playlist-select-all/, "Song-list multi-select checkboxes and selected-count toolbars must remain removed.");
+assert.match(appSource, /function measureSettingsNavVisibility\(\)[\s\S]*?target\.left >= root\.left[\s\S]*?target\.right <= root\.right[\s\S]*?target\.top >= root\.top[\s\S]*?target\.bottom <= root\.bottom/, "The release notice must follow the actual visibility of the Settings update dot.");
+assert.match(stylesSource, /\.sidebar-release-notice[\s\S]*?border-radius: 10px;[\s\S]*?background: #e8324f;[\s\S]*?color: #fff;/, "The release notice must be a red rounded rectangle with white text.");
 
 const i18nSandbox = { window: {} };
 vm.runInNewContext(generatedI18nSource, i18nSandbox, { filename: "i18n.generated.js" });
@@ -119,7 +125,9 @@ assert.match(appSource, /if \(!state\.auth\?\.signedIn\)/, "Guest UI must gate a
 assert.match(appSource, /state\.auth\?\.signedIn && state\.settings\.webFallback/, "Guest playback must never open the web fallback.");
 assert.match(mainSource, /function registerOnlineAudioStream[\s\S]*?upstreamStreamUrl[\s\S]*?\/online-audio\//, "Direct YouTube audio must be exposed through the same-origin local proxy.");
 assert.match(mainSource, /async function proxyOnlineAudio[\s\S]*?request\.headers\.range[\s\S]*?Readable\.fromWeb/, "The online audio proxy must forward byte ranges and stream the upstream response.");
+assert.match(mainSource, /maximumEnd = start \+ \(1024 \* 1024\) - 1[\s\S]*?headers\.Range = `bytes=\$\{start\}-\$\{Math\.max\(start, end\)\}`/, "Open-ended media ranges must be converted to bounded chunks for stable Electron playback.");
 assert.match(mainSource, /ipcMain\.handle\("ytm:playback"[\s\S]*?registerOnlineAudioStream/, "Playback IPC must return the local proxy URL rather than a raw cross-origin Googlevideo URL.");
+assert.doesNotMatch(innerTubeSource, /poTokens\s*\?\s*\[\{ client: WEB_REMIX/, "Authenticated playback must not promote WEB_REMIX ahead of the stable direct-stream clients.");
 assert.match(mainSource, /translateLyrics[\s\S]*?localTranslation\.translateLyrics/, "Lyrics translation must use the bundled offline engine after online providers fail.");
 const runawayTranslation = "\u6709\u6211\u88ab\u60f3\u627e".repeat(30);
 assert.equal(translationLooksDegenerate("I was meant to find", runawayTranslation), true, "Runaway repeated translations must be rejected.");
@@ -135,7 +143,7 @@ assert.match(mainSource, /if \(!isAutomaticLyricsArtist\(track, options\.artist\
 assert.match(mainSource, /ipcMain\.handle\("lyrics:search"[\s\S]*?canonicalLyricsLookup\(track, options\)[\s\S]*?searchLyricsCandidates\(lookup\.track, lookup\.options\)/, "Lyrics candidate search must use canonical artist metadata.");
 assert.match(mainSource, /mainWindow = null;[\s\S]*?process\.platform !== "darwin"\) app\.quit\(\)/, "Closing the main window must terminate the desktop process on Windows and Linux.");
 assert.match(mainSource, /if \(!mainWindow \|\| mainWindow\.isDestroyed\(\)\)[\s\S]*?createMainWindow\(\)/, "A second launch must recreate a missing main window instead of leaving a hidden process.");
-assert.match(appSource, /streamErrorRetry[\s\S]*?state\.playbackStreams\.delete\(track\.id\)[\s\S]*?playTrack\(track, \{ streamRetry: true, startTime \}\)/, "A media-element stream failure must discard the old URL and resolve it once more.");
+assert.match(appSource, /streamErrorRetry[\s\S]*?rememberFailedPlaybackItag[\s\S]*?state\.playbackStreams\.delete\(track\.id\)[\s\S]*?playTrack\(track, \{ streamRetry: true, startTime, excludeItags, excludeClients \}\)/, "A media-element stream failure must discard the old URL and retry with another format or client.");
 assert.match(appSource, /parseYouTubeMusicUrl/, "URL playback support is missing.");
 assert.match(appSource, /updateSkipSilence/, "Skip-silence processing is missing.");
 assert.match(mainSource, /if \(state\.lyricWindowActive\) createLyricWindow\(\);/, "Floating lyrics must reopen when the previous session left them active.");
@@ -203,6 +211,14 @@ assert.doesNotMatch(richLrc, /哈囉世界/, "Embedded translations must not be 
 assert.match(richLrc, /\{bg\}hey/, "TTML background vocals must be emitted separately.");
 const lineOnlyLrc = ttmlToLrc(`<tt xmlns="http://www.w3.org/ns/ttml"><body><p begin="5s" end="8s">A line without word timing</p></body></tt>`);
 assert.equal(parseLyrics(lineOnlyLrc)[0]?.words?.length || 0, 0, "Line timing must never be fabricated into word timing.");
+const inferredBackgroundLines = parseLyrics("[01:28.26]Made me into something new (Oh, yeah)\n[01:32.24]Led me through the deepest waters");
+const inferredBackground = inferredBackgroundLines.find((line) => line.isBackground);
+assert.ok(inferredBackground?.time > 91, "A trailing parenthetical background vocal must enter near the end of its main lyric, not at the same time.");
+assert.ok(inferredBackground?.words?.at(-1)?.end <= 92.24, "An inferred background vocal must finish before the next lyric begins.");
+const unsyncedParenthetical = parseLyrics("Song title (Acoustic Version)");
+assert.equal(unsyncedParenthetical.some((line) => line.isBackground), false, "Unsynced parenthetical text must not be fabricated into a zero-second background vocal.");
+assert.equal(unsyncedParenthetical[0]?.text, "Song title (Acoustic Version)", "Unsynced parenthetical text must remain intact.");
+assert.match(mainSource, /hasLegacyBackgroundTiming[\s\S]*?parseLyrics\(value\.result\.rawLyrics\)[\s\S]*?writeCachedLyrics/, "Previously cached background vocals with main-line timestamps must be reparsed automatically.");
 const prefixedTtml = `<tt:tt xmlns:tt="http://www.w3.org/ns/ttml"><tt:body><tt:p begin="1s"><tt:span begin="1s" end="2s">Prefix</tt:span></tt:p></tt:body></tt:tt>`;
 assert.match(ttmlToLrc(prefixedTtml), /Prefix/, "Namespace-prefixed TTML elements must be parsed.");
 const neteaseLrc = neteaseYrcToLrc("[6190,4440](6190,2190,0)Hello(8380,540,0), (8920,360,0)it's (9280,1350,0)me");
@@ -398,6 +414,12 @@ assert.doesNotMatch(preloadSource + mainSource + appSource, /alignLyricsCandidat
             bitrate: 128000,
             contentLength: "1024",
             url: "https://example.invalid/guest-audio"
+          }, {
+            itag: 140,
+            mimeType: "audio/mp4; codecs=\"mp4a.40.2\"",
+            bitrate: 96000,
+            contentLength: "900",
+            url: "https://example.invalid/guest-aac"
           }]
         }
       })
@@ -406,6 +428,9 @@ assert.doesNotMatch(preloadSource + mainSource + appSource, /alignLyricsCandidat
   try {
     const guestPlayback = await guestClient.playback("guest-video");
     assert.equal(guestPlayback.mode, "direct", "Guest playback should resolve a direct stream without an account.");
+    const fallbackPlayback = await guestClient.playback("guest-video", null, "auto", { excludeItags: [251] });
+    assert.equal(fallbackPlayback.itag, 140, "Playback fallback should select a different audio container after a decoder failure.");
+    assert.match(fallbackPlayback.mimeType, /^audio\/mp4/, "Playback fallback should be able to switch from WebM/Opus to AAC.");
     assert.ok(requestHeaders.length > 0, "Guest playback did not make a player request.");
     assert.ok(requestHeaders.every((headers) => !headers.Cookie && !headers.Authorization), "Guest playback leaked account headers.");
     await signedInClient.likeVideo("liked-video");

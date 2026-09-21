@@ -86,7 +86,6 @@ const state = {
   likedQuery: "",
   likedSort: "recent",
   likedFilter: "all",
-  likedSelectedIds: new Set(),
   likedLayout: "list",
   likedTrackIds: new Set(),
   likedRemovalTombstones: new Map(),
@@ -145,7 +144,6 @@ const state = {
   collectionFallback: null,
   collectionActionItem: null,
   collectionReturnArtist: null,
-  playlistSelectedKeys: new Set(),
   playlistsData: null,
   playlistsFilter: "all",
   playlistsQuery: "",
@@ -189,7 +187,7 @@ const state = {
   queueAutoloadThreshold: 5,
   playbackRecovery: false,
   playbackRequestId: 0,
-  playbackRetryLimit: 1,
+  playbackRetryLimit: 3,
   playbackFailures: new Map(),
   playbackFailedIds: new Set(),
   playbackFailureReasons: new Map(),
@@ -407,6 +405,7 @@ const els = {
   likedStatus: document.getElementById("likedStatus"),
   likedFilters: document.getElementById("likedFilters"),
   likedSearchInput: document.getElementById("likedSearchInput"),
+  likedSortSelect: document.getElementById("likedSortSelect"),
   likedPlayButton: document.getElementById("likedPlayButton"),
   likedShuffleButton: document.getElementById("likedShuffleButton"),
   likedDownloadButton: document.getElementById("likedDownloadButton"),
@@ -1905,6 +1904,48 @@ function playbackStreamForCache(videoId) {
   return playback;
 }
 
+function failedPlaybackItags() {
+  return String(els.audio?.dataset?.failedPlaybackItags || "")
+    .split(",")
+    .map(Number)
+    .filter(Number.isFinite);
+}
+
+function rememberFailedPlaybackItag(itag) {
+  const value = Number(itag);
+  if (!Number.isFinite(value) || !els.audio) return failedPlaybackItags();
+  const failed = new Set(failedPlaybackItags());
+  failed.add(value);
+  const values = [...failed];
+  els.audio.dataset.failedPlaybackItags = values.join(",");
+  return values;
+}
+
+function failedPlaybackClients() {
+  return String(els.audio?.dataset?.failedPlaybackClients || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function rememberFailedPlaybackClient(client) {
+  const value = String(client || "").trim();
+  if (!value || !els.audio) return failedPlaybackClients();
+  const failed = new Set(failedPlaybackClients());
+  failed.add(value);
+  const values = [...failed];
+  els.audio.dataset.failedPlaybackClients = values.join(",");
+  return values;
+}
+
+function resetPlaybackFormatFallback() {
+  if (!els.audio) return;
+  delete els.audio.dataset.failedPlaybackItags;
+  delete els.audio.dataset.failedPlaybackClients;
+  delete els.audio.dataset.playbackItag;
+  delete els.audio.dataset.playbackClient;
+}
+
 function updateCacheStatusText() {
   if (!els.settingsCacheStatus) return;
   const count = state.offlineCache?.tracks?.length || 0;
@@ -3130,7 +3171,6 @@ function resetAccountScopedState() {
   state.libraryData = null;
   state.playlistsData = null;
   state.historyData = null;
-  state.likedSelectedIds.clear();
   if (state.queueHydrated) {
     state.queue = state.queue.map(withoutAccountTrackState);
     if (state.currentTrack) state.currentTrack = withoutAccountTrackState(state.currentTrack);
@@ -3365,7 +3405,6 @@ function trackRowDetail(item, detailLabel) {
 
 function unifiedTrackRowsHtml(items, options = {}) {
   const {
-    selectable = false,
     detailLabel = "Song",
     rowClass = "",
     playDataName = "track-play",
@@ -3374,14 +3413,10 @@ function unifiedTrackRowsHtml(items, options = {}) {
     hostAttributes = () => ""
   } = options;
   return (items || []).map((item, index) => {
-    const selected = selectable && state.likedSelectedIds.has(item.id);
     const active = state.currentTrack?.id === item.id;
     const playAttribute = `data-${playDataName}="${index}"`;
     return `
       <div class="row downloaded-row liked-row collection-track-row unified-track-row ${rowClass} ${active ? "active" : ""}" data-index="${index}" data-track-id="${escapeText(item.id || "")}" ${hostAttributes(item, index)}>
-        ${selectable ? `<label class="liked-select" aria-label="Select ${escapeText(item.title)}">
-          <input type="checkbox" data-liked-select="${index}" ${selected ? "checked" : ""}>
-        </label>` : ""}
         <button class="liked-main" ${playAttribute} type="button">
           <span class="mini" style="background-image:${thumbnailStyle(item)}"></span>
           <span>
@@ -4606,14 +4641,9 @@ function playlistTrackKey(track) {
 
 function playlistRowsHtml(items) {
   return items.map((item, index) => {
-    const key = playlistTrackKey(item);
-    const selected = state.playlistSelectedKeys.has(key);
     const active = state.currentTrack?.id === item.id;
     return `
       <div class="row downloaded-row liked-row collection-track-row unified-track-row playlist-edit-row unified-playlist-track ${active ? "active" : ""}" data-index="${index}" data-track-id="${escapeText(item.id || "")}">
-        <label class="liked-select playlist-select" aria-label="Select ${escapeText(item.title)}">
-          <input type="checkbox" data-playlist-select="${index}" ${selected ? "checked" : ""}>
-        </label>
         <button class="liked-main" data-playlist-play="${index}" type="button">
           <span class="mini" style="background-image:${thumbnailStyle(item)}"></span>
           <span>
@@ -4628,66 +4658,6 @@ function playlistRowsHtml(items) {
       </div>
     `;
   }).join("");
-  /* Legacy markup retained temporarily for migration safety; unreachable. */
-  return items.map((item, index) => {
-    const key = playlistTrackKey(item);
-    const selected = state.playlistSelectedKeys.has(key);
-    const position = String(index + 1).padStart(2, "0");
-    return `
-      <div class="playlist-edit-row ${state.currentTrack?.id === item.id ? "active" : ""}" data-index="${index}" data-track-id="${escapeText(item.id || "")}">
-        <label class="playlist-select" aria-label="Select ${escapeText(item.title)}">
-          <input type="checkbox" data-playlist-select="${index}" ${selected ? "checked" : ""}>
-        </label>
-        <span class="playlist-position">${position}</span>
-        <button class="playlist-track-main" data-playlist-play="${index}" type="button">
-          <span class="mini" style="background-image:${thumbnailStyle(item)}"></span>
-          <span>
-            <span class="title">${escapeText(item.title)}</span>
-            <span class="subtitle">${escapeText(item.subtitle || item.artist || "YouTube Music")}</span>
-          </span>
-        </button>
-        <span class="playlist-duration">${escapeText(item.duration || "")}</span>
-        <div class="playlist-track-actions">
-      <button class="playlist-play-hover" data-playlist-play="${index}" data-playback-indicator type="button" aria-label="Play ${escapeText(item.title || "song")}"><span aria-hidden="true">${standardIconSvg(state.currentTrack?.id === item.id && state.playing ? "pause" : "play")}</span></button>
-          ${moreTriggerHtml("playlist-row-more")}
-          <button class="playlist-download ${isOfflineCached(item.id) ? "downloaded" : ""} ${state.offlineCachePending.has(item.id) ? "pending" : ""} ${downloadFailure(item.id) ? "failed" : ""}" data-download-trigger type="button" aria-label="${downloadFailure(item.id) ? "Retry offline download for" : isOfflineCached(item.id) ? "Remove offline copy of" : "Save offline"} ${escapeText(item.title || "song")}">
-            ${downloadStateHtml(item)}
-          </button>
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-function prunePlaylistSelection(items) {
-  const keys = new Set((items || []).map(playlistTrackKey));
-  for (const key of [...state.playlistSelectedKeys]) {
-    if (!keys.has(key)) state.playlistSelectedKeys.delete(key);
-  }
-}
-
-function playlistBulkToolbarHtml(items) {
-  const tracks = (items || []).filter(isTrackItem);
-  const selected = tracks.filter((item) => state.playlistSelectedKeys.has(playlistTrackKey(item)));
-  const selectedCount = selected.length;
-  const allSelected = tracks.length > 0 && selectedCount === tracks.length;
-  return `
-    <div class="playlist-bulk-toolbar">
-      <label class="playlist-select-all">
-        <input type="checkbox" data-playlist-select-all ${allSelected ? "checked" : ""} ${tracks.length ? "" : "disabled"}>
-        <span>${selectedCount} selected</span>
-      </label>
-      <span class="status">Drag tracks to reorder; changes sync to YouTube Music.</span>
-      <div class="playlist-bulk-actions">
-        <button class="secondary" data-playlist-queue-selected type="button" ${selectedCount ? "" : "disabled"}>
-          Add to queue
-        </button>
-        <button class="secondary" data-playlist-download-selected type="button" ${selectedCount ? "" : "disabled"}>
-          Download selected
-        </button>
-      </div>
-    </div>
-  `;
 }
 
 function playlistSmartSortLabel(rule) {
@@ -4736,10 +4706,6 @@ function playlistSmartSortedTracks(rule, tracks = playlistEditableTracks()) {
     return a.index - b.index;
   });
   return decorated.map((entry) => entry.track);
-}
-
-function playlistSmartSortRuleFromToolbar(button) {
-  return button?.closest(".playlist-bulk-toolbar")?.querySelector("[data-playlist-smart-sort]")?.value || "play-count";
 }
 
 function applyPlaylistSmartSort(rule = "play-count") {
@@ -4846,8 +4812,6 @@ function renderCollection(result, fallback = {}) {
   const likedCollectionView = isLikedSongsCollection(result, fallback);
   const visibleTracks = playlistView ? filterByQuery(tracks, state.collectionQuery) : tracks;
   const gridView = state.collectionLayout === "grid";
-  if (playlistView) prunePlaylistSelection(tracks);
-  else state.playlistSelectedKeys.clear();
 
   els.collectionEyebrow.textContent = label;
   els.collectionTitle.textContent = header.title || fallback.title || label;
@@ -4919,7 +4883,6 @@ function renderCollection(result, fallback = {}) {
           </div>
         </div>
         <div class="${gridView ? "cards collection-track-grid" : likedCollectionView || !playlistView ? "liked-results collection-liked-results" : "playlist-edit-list"} collection-tracks">
-          ${!gridView && playlistView && !likedCollectionView && visibleTracks.length ? playlistBulkToolbarHtml(visibleTracks) : ""}
           ${visibleTracks.length
             ? (gridView ? cardsHtml(visibleTracks, "track") : likedCollectionView ? likedRowsHtml(visibleTracks) : playlistView ? playlistRowsHtml(visibleTracks) : likedRowsHtml(visibleTracks, { selectable: false, detailLabel: label }))
             : `<p class="status collection-search-empty">No songs loaded.</p>`}
@@ -5105,9 +5068,6 @@ async function refreshCurrentCollectionStatus(label = "Refreshing playlist...") 
 function updateCollectionTracksLocal(tracks) {
   if (!state.collectionResult) return;
   const keys = new Set((tracks || []).map(playlistTrackKey));
-  for (const key of [...state.playlistSelectedKeys]) {
-    if (!keys.has(key)) state.playlistSelectedKeys.delete(key);
-  }
   state.collectionResult.tracks = tracks || [];
   state.collectionResult.sections = (state.collectionResult.sections || []).map((section) => ({
     ...section,
@@ -5199,58 +5159,6 @@ async function removeTrackFromCurrentPlaylist(item, button) {
     button.textContent = "Remove";
     toast(error.message || "Remove from playlist failed.", true);
   }
-}
-
-async function removeSelectedPlaylistTracks() {
-  const playlistId = activeCollectionPlaylistId();
-  const tracks = playlistEditableTracks();
-  const selected = tracks.filter((track) => state.playlistSelectedKeys.has(playlistTrackKey(track)) && track.setVideoId);
-  if (!playlistId || !selected.length) return;
-  const previousTracks = tracks;
-  const selectedKeys = new Set(selected.map(playlistTrackKey));
-  updateCollectionTracksLocal(tracks.filter((track) => !selectedKeys.has(playlistTrackKey(track))));
-  state.playlistSelectedKeys.clear();
-  renderCollection(state.collectionResult, state.collectionFallback || {});
-  toast(`Removing ${selected.length} track${selected.length === 1 ? "" : "s"}...`);
-  try {
-    setSyncState("playlists", { status: "pending", pending: selected.length, error: "" });
-    for (const item of selected) {
-      await window.metro.removeFromPlaylist({
-        playlistId,
-        videoId: item.id,
-        setVideoId: item.setVideoId
-      });
-    }
-    toast(`Removed ${selected.length} track${selected.length === 1 ? "" : "s"} from playlist.`);
-    await refreshCurrentCollectionStatus("Syncing playlist...");
-  } catch (error) {
-    setSyncState("playlists", { status: "error", pending: 0, error: error.message || "Remove selected failed." });
-    for (const item of selected) {
-      enqueueSyncAction("playlist-remove", { playlistId, videoId: item.id, setVideoId: item.setVideoId }, `Remove from playlist: ${item.title || "Song"}`);
-    }
-    updateCollectionTracksLocal(previousTracks);
-    renderCollection(state.collectionResult, state.collectionFallback || {});
-    toast(error.message || "Remove selected failed.", true);
-  }
-}
-
-function selectedPlaylistTracks() {
-  return playlistEditableTracks().filter((track) => state.playlistSelectedKeys.has(playlistTrackKey(track)));
-}
-
-async function queueSelectedPlaylistTracks() {
-  const tracks = selectedPlaylistTracks().filter(isTrackItem);
-  if (!tracks.length) return;
-  const source = queueSourceFromResult(state.collectionResult, state.collectionFallback || {}, "playlist");
-  await addToQueue(tracks, false, source);
-  toast(`Added ${tracks.length} selected track${tracks.length === 1 ? "" : "s"} to queue.`);
-}
-
-async function downloadSelectedPlaylistTracks(button = null) {
-  const tracks = selectedPlaylistTracks().filter(isTrackItem);
-  if (!tracks.length) return;
-  const title = state.collectionResult?.header?.title || state.collectionFallback?.title || "Playlist";
-  await cacheTracksOffline(tracks, `${title} selection`, button);
 }
 
 function homeGreeting() {
@@ -6338,38 +6246,8 @@ function likedVisibleTracks({ ignoreSearch = false } = {}) {
   return sorted;
 }
 
-function pruneLikedSelection(tracks) {
-  const ids = new Set((tracks || []).map((track) => track.id));
-  for (const id of [...state.likedSelectedIds]) {
-    if (!ids.has(id)) state.likedSelectedIds.delete(id);
-  }
-}
-
-function likedRowsHtml(items, { selectable = true, detailLabel = "Liked song" } = {}) {
-  return unifiedTrackRowsHtml(items, { selectable, detailLabel });
-  /* Legacy markup retained temporarily for migration safety; unreachable. */
-  return items.map((item, index) => {
-    const selected = state.likedSelectedIds.has(item.id);
-    const active = state.currentTrack?.id === item.id;
-    return `
-      <div class="row downloaded-row liked-row ${selectable ? "" : "collection-track-row"} ${active ? "active" : ""}" data-index="${index}" data-track-id="${escapeText(item.id || "")}">
-        ${selectable ? `<label class="liked-select" aria-label="Select ${escapeText(item.title)}">
-          <input type="checkbox" data-liked-select="${index}" ${selected ? "checked" : ""}>
-        </label>` : ""}
-        <button class="liked-main" data-liked-play="${index}" type="button">
-          <span class="mini" style="background-image:${thumbnailStyle(item)}"></span>
-          <span>
-            <span class="title">${escapeText(item.title)}</span>
-            <span class="subtitle">${escapeText(item.subtitle || item.artist || "YouTube Music")}</span>
-            <span class="downloaded-detail">${escapeText([item.duration, detailLabel].filter(Boolean).join(" · "))}</span>
-          </span>
-        </button>
-        ${moreTriggerHtml("row-more")}
-        ${downloadTriggerHtml(item)}
-        <button class="row-play" data-liked-play="${index}" data-playback-indicator type="button" aria-label="${active && state.playing ? "Pause" : "Play"} ${escapeText(item.title || "song")}"><span>${standardIconSvg(active && state.playing ? "pause" : "play")}</span></button>
-      </div>
-    `;
-  }).join("");
+function likedRowsHtml(items, { detailLabel = "Liked song" } = {}) {
+  return unifiedTrackRowsHtml(items, { detailLabel });
 }
 
 function renderLiked(result = state.likedData) {
@@ -6380,15 +6258,14 @@ function renderLiked(result = state.likedData) {
   const playbackTracks = likedVisibleTracks({ ignoreSearch: true });
   const gridView = state.likedLayout === "grid";
   setIconButton(els.likedLayoutButton, gridView ? "list" : "grid", gridView ? "List view" : "Grid view");
-  pruneLikedSelection(allTracks);
+  if (els.likedSortSelect) els.likedSortSelect.value = state.likedSort;
   renderSyncPanels();
   for (const button of els.likedFilters?.querySelectorAll("[data-liked-filter]") || []) {
     button.classList.toggle("active", button.dataset.likedFilter === state.likedFilter);
   }
 
-  const selectedCount = state.likedSelectedIds.size;
   const queryText = state.likedQuery ? ` matching "${state.likedQuery}"` : "";
-  els.likedStatus.textContent = appendBatchStatus(`${allTracks.length} liked song${allTracks.length === 1 ? "" : "s"}${queryText}. ${selectedCount} selected.`);
+  els.likedStatus.textContent = appendBatchStatus(`${allTracks.length} liked song${allTracks.length === 1 ? "" : "s"}${queryText}.`);
   els.likedPlayButton.disabled = !visibleTracks.length;
   els.likedShuffleButton.disabled = !visibleTracks.length;
   els.likedDownloadButton.disabled = !allTracks.length || allTracks.every((track) => isOfflineCached(track.id));
@@ -6405,7 +6282,7 @@ function renderLiked(result = state.likedData) {
     els.likedShuffleButton.disabled = !offlineTracks.length;
     els.likedPlayButton._queueSource = queueSource("downloads", "Liked Songs · Offline");
     els.likedShuffleButton._queueSource = els.likedPlayButton._queueSource;
-    els.likedStatus.textContent = appendBatchStatus(`${allTracks.length} liked song${allTracks.length === 1 ? "" : "s"}${queryText}. Offline mode: ${offlineTracks.length} downloaded. ${selectedCount} selected.`);
+    els.likedStatus.textContent = appendBatchStatus(`${allTracks.length} liked song${allTracks.length === 1 ? "" : "s"}${queryText}. Offline mode: ${offlineTracks.length} downloaded.`);
   }
 
   if (!visibleTracks.length) {
@@ -8536,10 +8413,16 @@ function lyricsAgentFromRoleText(value) {
 function expandLocalParentheticalBackgroundLines(sourceLines = []) {
   const expanded = [];
   const tokenize = (value) => String(value || "").trim().split(/\s+/).filter(Boolean);
-  for (const sourceLine of sourceLines) {
+  for (let sourceIndex = 0; sourceIndex < sourceLines.length; sourceIndex += 1) {
+    const sourceLine = sourceLines[sourceIndex];
     const line = { ...sourceLine };
     const matches = [...String(line.text || "").matchAll(/\(([^()]+)\)/g)];
     if (line.isBackground || !matches.length) {
+      expanded.push(line);
+      continue;
+    }
+    const lineStart = line.time == null ? NaN : Number(line.time);
+    if (!Number.isFinite(lineStart)) {
       expanded.push(line);
       continue;
     }
@@ -8573,14 +8456,29 @@ function expandLocalParentheticalBackgroundLines(sourceLines = []) {
       Number(line.time || 0),
       ...mainWords.map((word) => Number(word.end)).filter(Number.isFinite)
     );
-    const inferredDuration = 0.34;
+    const secondsPerToken = 0.38;
+    const inferredDuration = Math.max(0.52, backgroundTokens.length * secondsPerToken);
+    const nextTimedLine = sourceLines.slice(sourceIndex + 1).find((candidate) =>
+      candidate?.time != null && Number.isFinite(Number(candidate.time)) && Number(candidate.time) > lineStart
+    );
+    const mainTokenCount = Math.max(1, tokenize(mainText).length);
+    const estimatedLineSpan = Math.max(1.2, Math.min(10, mainTokenCount * 0.5 + 1.4));
+    const availableLineSpan = nextTimedLine
+      ? Math.max(0.1, Math.min(Number(nextTimedLine.time) - lineStart, estimatedLineSpan))
+      : estimatedLineSpan;
+    const originalText = String(line.text || "");
+    const firstParentheticalIndex = Math.max(0, Number(matches[0]?.index || 0));
+    const textWithoutParenthesesLength = Math.max(1, originalText.replace(/\s*\([^()]+\)/g, "").trim().length);
+    const placementRatio = Math.max(0, Math.min(1, firstParentheticalIndex / textWithoutParenthesesLength));
+    const inferredByPlacement = lineStart + Math.max(0, availableLineSpan - inferredDuration) * placementRatio;
+    const inferredTokenDuration = inferredDuration / Math.max(1, backgroundTokens.length);
     const inferredStart = Number.isFinite(firstTimedStart)
-      ? Math.max(Number(line.time || 0), firstTimedStart - (missingCount * inferredDuration))
-      : Math.max(Number(line.time || 0), mainEnd - Math.max(0.7, backgroundTokens.length * inferredDuration));
+      ? Math.max(lineStart, firstTimedStart - (missingCount * secondsPerToken))
+      : Math.max(lineStart, inferredByPlacement, mainEnd > lineStart ? mainEnd - inferredDuration : lineStart);
     const inferredWords = backgroundTokens.slice(0, missingCount).map((wordText, index) => ({
       text: wordText,
-      start: inferredStart + (index * inferredDuration),
-      end: inferredStart + ((index + 1) * inferredDuration)
+      start: inferredStart + (index * inferredTokenDuration),
+      end: inferredStart + ((index + 1) * inferredTokenDuration)
     }));
     const backgroundWords = [
       ...inferredWords,
@@ -13549,7 +13447,10 @@ async function playOfflineCachedTrack(track, cachedTrack, requestId = state.play
 async function playTrack(track, options = {}) {
   if (!track?.id) return;
   if (blockPlaybackForGame()) return;
-  if (!options.streamRetry) delete els.audio.dataset.streamErrorRetry;
+  if (!options.streamRetry) {
+    delete els.audio.dataset.streamErrorRetry;
+    resetPlaybackFormatFallback();
+  }
   const trackChanged = String(state.currentTrack?.id || "") !== String(track.id || "");
   const requestId = beginPlaybackRequest(track);
   state.currentTrack = track;
@@ -13632,8 +13533,11 @@ async function playTrack(track, options = {}) {
   }
 
   let lastError = null;
+  const excludedItags = new Set((options.excludeItags || failedPlaybackItags()).map(Number).filter(Number.isFinite));
+  const excludedClients = new Set((options.excludeClients || failedPlaybackClients()).map((value) => String(value || "").trim()).filter(Boolean));
   for (let attempt = 0; attempt <= state.playbackRetryLimit; attempt += 1) {
     if (!isCurrentPlaybackRequest(requestId, track)) return false;
+    let attemptedPlayback = null;
     try {
       stopEmbedPlayer();
       state.playbackMode = "direct";
@@ -13641,8 +13545,11 @@ async function playTrack(track, options = {}) {
       const playback = await window.metro.playback({
         videoId: track.id,
         playlistId: track.playlistId,
-        quality: state.settings.quality
+        quality: state.settings.quality,
+        excludeItags: [...excludedItags],
+        excludeClients: [...excludedClients]
       });
+      attemptedPlayback = playback;
       if (!isCurrentPlaybackRequest(requestId, track)) return false;
       if (playback?.details?.lengthSeconds) track.lengthSeconds = playback.details.lengthSeconds;
       if (playback?.details?.author) {
@@ -13655,6 +13562,10 @@ async function playTrack(track, options = {}) {
       }
       rememberPlaybackStream(track.id, playback);
       track.playbackBitrate = Number(playback?.bitrate || playback?.format?.bitrate || 0);
+      els.audio.dataset.failedPlaybackItags = [...excludedItags].join(",");
+      els.audio.dataset.failedPlaybackClients = [...excludedClients].join(",");
+      els.audio.dataset.playbackItag = String(playback.itag || "");
+      els.audio.dataset.playbackClient = String(playback.client || "");
       els.audio.crossOrigin = "anonymous";
       els.audio.dataset.playbackRequestId = String(requestId);
       els.audio.src = playback.streamUrl;
@@ -13680,6 +13591,15 @@ async function playTrack(track, options = {}) {
     } catch (error) {
       if (!isCurrentPlaybackRequest(requestId, track) || isInterruptedPlaybackError(error)) return false;
       lastError = error;
+      const failedItag = Number(attemptedPlayback?.itag || els.audio.dataset.playbackItag);
+      if (Number.isFinite(failedItag)) {
+        excludedItags.add(failedItag);
+        els.audio.dataset.failedPlaybackItags = [...excludedItags].join(",");
+      }
+      if (attempt > 0 && attemptedPlayback?.client) {
+        excludedClients.add(String(attemptedPlayback.client));
+        els.audio.dataset.failedPlaybackClients = [...excludedClients].join(",");
+      }
       if (attempt < state.playbackRetryLimit) await sleep(350);
     }
   }
@@ -13695,7 +13615,6 @@ async function playTrack(track, options = {}) {
 
 async function loadLiked() {
   switchView("liked");
-  state.likedSelectedIds.clear();
   if (!state.auth?.signedIn) {
     setSyncState("liked", { status: "local", pending: 0, error: "" });
     els.likedStatus.textContent = "Sign in to load Liked Songs.";
@@ -13730,7 +13649,6 @@ function removeLikedTracks(ids) {
     ...section,
     tracks: (section.tracks || []).filter((track) => !removeIds.has(track.id))
   }));
-  state.likedSelectedIds.clear();
 }
 
 async function toggleArtistFollow() {
@@ -14215,6 +14133,12 @@ els.librarySync?.addEventListener("click", async (event) => {
 
 els.likedSearchInput.addEventListener("input", () => {
   state.likedQuery = els.likedSearchInput.value;
+  renderLiked();
+});
+
+els.likedSortSelect?.addEventListener("change", () => {
+  state.likedSort = els.likedSortSelect.value;
+  try { localStorage.setItem("auralane:sort:likedView", state.likedSort); } catch {}
   renderLiked();
 });
 
@@ -15210,56 +15134,6 @@ els.lyricsFillInput?.addEventListener("keydown", (event) => {
   if (event.key === "Enter") checkLyricsFillAnswer();
 });
 
-function handleLikedSelectionChange(event) {
-  const checkbox = event.target.closest("[data-liked-select]");
-  if (!checkbox) return;
-  const container = checkbox.closest(".liked-results");
-  const item = container?._items?.[Number(checkbox.dataset.likedSelect)];
-  if (!item?.id) return;
-  if (checkbox.checked) state.likedSelectedIds.add(item.id);
-  else state.likedSelectedIds.delete(item.id);
-  if (currentVisibleViewId() === "likedView") renderLiked();
-  if (currentVisibleViewId() === "libraryView" && state.libraryData) renderLibrary(state.libraryData);
-  if (currentVisibleViewId() === "collectionView" && isLikedSongsCollection()) {
-    renderCollection(state.collectionResult, state.collectionFallback || {});
-  }
-}
-
-els.likedResults.addEventListener("change", handleLikedSelectionChange);
-els.librarySections.addEventListener("change", handleLikedSelectionChange);
-els.collectionResults.addEventListener("change", handleLikedSelectionChange);
-
-// Checkbox clicks are selection-only. Keep them out of the document-level
-// playback handler even when the row is re-rendered immediately after change.
-for (const container of [els.likedResults, els.librarySections, els.collectionResults]) {
-  container?.addEventListener("click", (event) => {
-    if (event.target.closest(".liked-select, [data-liked-select]")) event.stopPropagation();
-  });
-}
-
-els.collectionResults.addEventListener("change", (event) => {
-  const selectAll = event.target.closest("[data-playlist-select-all]");
-  if (selectAll) {
-    const items = playlistEditableTracks().filter(isTrackItem);
-    if (selectAll.checked) {
-      for (const item of items) state.playlistSelectedKeys.add(playlistTrackKey(item));
-    } else {
-      state.playlistSelectedKeys.clear();
-    }
-    renderCollection(state.collectionResult, state.collectionFallback || {});
-    return;
-  }
-
-  const checkbox = event.target.closest("[data-playlist-select]");
-  if (!checkbox) return;
-  const item = checkbox.closest(".collection-tracks")?._items?.[Number(checkbox.dataset.playlistSelect)];
-  if (!item) return;
-  const key = playlistTrackKey(item);
-  if (checkbox.checked) state.playlistSelectedKeys.add(key);
-  else state.playlistSelectedKeys.delete(key);
-  renderCollection(state.collectionResult, state.collectionFallback || {});
-});
-
 window.addEventListener("resize", hideMoreMenu);
 document.addEventListener("scroll", hideMoreMenu, true);
 
@@ -15568,24 +15442,6 @@ document.addEventListener("click", async (event) => {
   if (playlistRemove) {
     const item = playlistRemove.closest(".collection-tracks")?._items?.[Number(playlistRemove.dataset.playlistRemove)];
     if (item) await removeTrackFromCurrentPlaylist(item, playlistRemove);
-    return;
-  }
-
-  const playlistRemoveSelected = event.target.closest("[data-playlist-remove-selected]");
-  if (playlistRemoveSelected) {
-    await removeSelectedPlaylistTracks();
-    return;
-  }
-
-  const playlistQueueSelected = event.target.closest("[data-playlist-queue-selected]");
-  if (playlistQueueSelected) {
-    await queueSelectedPlaylistTracks();
-    return;
-  }
-
-  const playlistDownloadSelected = event.target.closest("[data-playlist-download-selected]");
-  if (playlistDownloadSelected) {
-    await downloadSelectedPlaylistTracks(playlistDownloadSelected);
     return;
   }
 
@@ -16291,13 +16147,17 @@ els.audio.addEventListener("error", () => {
   if (requestId && requestId !== state.playbackRequestId) return;
   if (state.playbackMode === "direct" && state.currentTrack) {
     const retryCount = Number(els.audio.dataset.streamErrorRetry || 0);
-    if (retryCount < 1) {
+    if (retryCount < state.playbackRetryLimit) {
       const track = state.currentTrack;
       const startTime = currentPlaybackSeconds();
       els.audio.dataset.streamErrorRetry = String(retryCount + 1);
+      const excludeItags = rememberFailedPlaybackItag(els.audio.dataset.playbackItag);
+      const excludeClients = retryCount > 0
+        ? rememberFailedPlaybackClient(els.audio.dataset.playbackClient)
+        : failedPlaybackClients();
       state.playbackStreams.delete(track.id);
       setPlaybackModeLabel("Refreshing stream");
-      playTrack(track, { streamRetry: true, startTime }).catch(() => {});
+      playTrack(track, { streamRetry: true, startTime, excludeItags, excludeClients }).catch(() => {});
       return;
     }
     if (webFallbackAllowed()) {
@@ -17426,17 +17286,26 @@ function measureSettingsNavVisibility() {
   if (!els.sidebar || !els.settingsNav) return;
   const root = els.sidebar.getBoundingClientRect();
   const target = els.settingsNav.getBoundingClientRect();
-  settingsNavVisible = target.top >= root.top && target.bottom <= root.bottom;
+  const style = getComputedStyle(els.settingsNav);
+  settingsNavVisible = style.display !== "none"
+    && style.visibility !== "hidden"
+    && Number(style.opacity || 1) > 0
+    && target.width > 0
+    && target.height > 0
+    && target.left >= root.left
+    && target.right <= root.right
+    && target.top >= root.top
+    && target.bottom <= root.bottom;
   renderSidebarUpdateNotice();
 }
 
 function setupSidebarUpdateNotice() {
   if (!els.sidebar || !els.settingsNav) return;
   if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(([entry]) => {
-      settingsNavVisible = Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.8);
-      renderSidebarUpdateNotice();
-    }, { root: els.sidebar, threshold: [0, 0.8, 1] });
+    const observer = new IntersectionObserver(() => measureSettingsNavVisibility(), {
+      root: els.sidebar,
+      threshold: [0, 1]
+    });
     observer.observe(els.settingsNav);
   }
   els.sidebar.addEventListener("scroll", measureSettingsNavVisibility, { passive: true });
@@ -17591,7 +17460,10 @@ function setupCollectionToolbarEnhancements() {
   try {
     state.collectionLayout = localStorage.getItem("auralane:layout:collectionView") === "grid" ? "grid" : "list";
     state.likedLayout = localStorage.getItem("auralane:layout:likedView") === "grid" ? "grid" : "list";
+    const savedLikedSort = localStorage.getItem("auralane:sort:likedView");
+    if (["recent", "title", "artist", "duration"].includes(savedLikedSort)) state.likedSort = savedLikedSort;
   } catch {}
+  if (els.likedSortSelect) els.likedSortSelect.value = state.likedSort;
   setIconButton(els.likedLayoutButton, state.likedLayout === "grid" ? "list" : "grid", state.likedLayout === "grid" ? "List view" : "Grid view");
   for (const toolbar of document.querySelectorAll(".view .collection-toolbar")) {
     const view = toolbar.closest(".view");

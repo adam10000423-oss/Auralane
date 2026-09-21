@@ -359,7 +359,7 @@ class YouTube {
   library(browseId) { return this._client.library(browseId); }
   collectLibrary(browseId) { return this._client.collectLibrary(browseId); }
   libraryOverview() { return this._client.libraryOverview(); }
-  playback(videoId, playlistId, quality) { return this._client.playback(videoId, playlistId, quality); }
+  playback(videoId, playlistId, quality, options) { return this._client.playback(videoId, playlistId, quality, options); }
 
   // ── NEW: History (Metrolist: YouTube.kt → history()) ──
   async history() {

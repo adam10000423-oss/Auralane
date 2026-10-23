@@ -1,0 +1,29 @@
+name: Verify Listen Together Server
+on:
+  push:
+    paths:
+      - "server/listen-together/**"
+      - "src/shared/onlineTogetherProtocol.js"
+      - "render.yaml"
+      - ".github/workflows/listen-together.yml"
+  pull_request:
+    paths:
+      - "server/listen-together/**"
+      - "src/shared/onlineTogetherProtocol.js"
+      - "render.yaml"
+      - ".github/workflows/listen-together.yml"
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/listen-together/package-lock.json
+      - run: npm ci --prefix server/listen-together --omit=dev
+      - run: npm test --prefix server/listen-together
+      - run: npm audit --prefix server/listen-together --omit=dev --audit-level=moderate

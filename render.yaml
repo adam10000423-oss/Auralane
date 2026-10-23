@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: auralane-together
+    runtime: node
+    plan: free
+    buildCommand: npm ci --prefix server/listen-together --omit=dev
+    startCommand: node server/listen-together/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"

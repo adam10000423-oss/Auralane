@@ -1,0 +1,9 @@
+{
+  "name": "auralane-listen-together",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=22 <25" },
+  "scripts": { "start": "node server.js", "test": "node --test server.test.js" },
+  "dependencies": { "ws": "8.22.0" }
+}

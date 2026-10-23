@@ -20,7 +20,7 @@ test("health and independently authenticated host/guest playback synchronization
   const { relay, origin, request } = await fixture();
   let socket;
   try {
-    assert.deepEqual(await (await request("/health")).json(), { ok: true, protocol: 1 });
+    assert.deepEqual(await (await request("/health")).json(), { ok: true, protocol: 1, features: ["unknown-duration"] });
     const host = await (await request("/v1/rooms", { name: "Host" })).json();
     const path = `/v1/rooms/${host.state.code}`;
     const guest = await (await request(path + "/join", { name: "Guest" })).json();
@@ -63,5 +63,20 @@ test("room and member capacity are bounded", async () => {
     assert.equal((await request("/v1/rooms", { name: "Another" })).status, 503);
     for (let i = 0; i < 7; i++) assert.equal((await request(`/v1/rooms/${host.state.code}/join`, { name: `Guest ${i}` })).status, 200);
     assert.equal((await request(`/v1/rooms/${host.state.code}/join`, { name: "Full" })).status, 409);
+  } finally { await relay.close(); }
+});
+
+test("unknown duration stays unknown until real media metadata arrives", async () => {
+  const { relay, request } = await fixture();
+  try {
+    const host = await (await request("/v1/rooms", { name: "Host" })).json();
+    const path = `/v1/rooms/${host.state.code}/command`;
+    let state = await (await request(path, { type: "queue", tracks: [{ ...song, duration: 0 }], expectedSeq: host.state.seq }, host.token)).json();
+    assert.equal(state.queue[0].duration, 0);
+    state = await (await request(path, { type: "playback", index: 0, playing: false, position: 42, expectedSeq: state.seq }, host.token)).json();
+    assert.equal(state.playback.position, 42); validateSnapshot(state);
+    state = await (await request(path, { type: "queue", tracks: [song], expectedSeq: state.seq }, host.token)).json();
+    assert.equal(state.queue[0].duration, 180);
+    assert.equal(state.playback.position, 42);
   } finally { await relay.close(); }
 });

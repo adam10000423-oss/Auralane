@@ -81,11 +81,11 @@ function createRelay(options = {}) {
       const index = next.findIndex(t => t.id === id), at = now(), seconds = position(snapshot(room), at);
       room.queue = next;
       room.playback = { index, playing: index >= 0 && room.playback.playing,
-        position: index >= 0 ? Math.min(next[index].duration, seconds) : 0, anchoredAt: at };
+        position: index >= 0 ? Math.min(next[index].duration || 86400, seconds) : 0, anchoredAt: at };
     } else if (input.type === "playback") {
       const { index, playing, position: seconds } = input;
       if (!Number.isInteger(index) || index < -1 || index >= room.queue.length || typeof playing !== "boolean" ||
-          !Number.isFinite(seconds) || seconds < 0 || seconds > (room.queue[index]?.duration || 0) || (index < 0 && playing)) throw fault("INVALID_PLAYBACK");
+          !Number.isFinite(seconds) || seconds < 0 || seconds > (index >= 0 ? room.queue[index].duration || 86400 : 0) || (index < 0 && playing)) throw fault("INVALID_PLAYBACK");
       room.playback = { index, playing, position: seconds, anchoredAt: now() + (playing ? 350 : 0) };
     } else throw fault("INVALID_COMMAND");
     broadcast(room);
@@ -98,7 +98,7 @@ function createRelay(options = {}) {
     try {
       if (closing) throw fault("SERVER_BUSY", 503);
       origin(req);
-      if (req.url === "/health" && req.method === "GET") return reply(200, { ok: true, protocol: 1 });
+      if (req.url === "/health" && req.method === "GET") return reply(200, { ok: true, protocol: 1, features: ["unknown-duration"] });
       rate(`all:${ip(req)}`, 180);
       if (req.url === "/v1/time" && req.method === "GET") return reply(200, { protocol: 1, serverTime: now() });
       if (req.url === "/v1/rooms" && req.method === "POST") {

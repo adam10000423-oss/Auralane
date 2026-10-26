@@ -1,8 +1,17 @@
 <p align="center">
-  <img src="src/assets/auralane-icon.png" alt="Auralane icon" width="112" height="112">
+  <img src="src/assets/auralane-icon.png" alt="Auralane icon" width="200" height="200">
 </p>
 
-# Auralane
+<h1 align="center">Auralane</h1>
+
+<p align="center"><strong>A desktop YouTube Music client</strong></p>
+
+<p align="center">
+  <a href="https://github.com/adam10000423-oss/Auralane/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/adam10000423-oss/Auralane?style=for-the-badge&amp;label=RELEASE&amp;color=478cc9"></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/adam10000423-oss/Auralane?style=for-the-badge&amp;label=LICENSE&amp;color=d17b43"></a>
+  <a href="https://github.com/adam10000423-oss/Auralane/releases"><img alt="Total release downloads" src="https://img.shields.io/github/downloads/adam10000423-oss/Auralane/total?style=for-the-badge&amp;label=DOWNLOADS&amp;color=78ad42"></a>
+  <a href="https://github.com/adam10000423-oss/Auralane/actions/workflows/release.yml"><img alt="Release build status" src="https://img.shields.io/github/actions/workflow/status/adam10000423-oss/Auralane/release.yml?style=for-the-badge&amp;label=BUILD&amp;color=4babb9"></a>
+</p>
 
 Auralane is a desktop music player for YouTube Music, built with Electron. It combines discovery, queue management, local music, offline playback, synchronized lyrics, translation, desktop lyrics, and compact player experiences in one focused interface.
 
@@ -56,11 +65,9 @@ Captured in the running Electron app using live Counting Stars search/lyrics res
 
 Clear media in the main area, translucent controls and song rows, a resizable Session panel, and the compact glass transport.
 
-![Animated dark Liquid Glass demo with an anonymous account and the selected video background](docs/screenshots/15-liquid-glass-demo.gif)
+[![Dark Liquid Glass screen-recording preview](docs/screenshots/10-liquid-glass-background.png)](https://raw.githubusercontent.com/adam10000423-oss/Auralane/main/docs/screenshots/15-liquid-glass-demo.mp4)
 
-Full-resolution screenshot:
-
-![Dark Liquid Glass with a custom rain-window video and Counting Stars](docs/screenshots/10-liquid-glass-background.png)
+[Watch the 12-second screen recording (MP4)](https://raw.githubusercontent.com/adam10000423-oss/Auralane/main/docs/screenshots/15-liquid-glass-demo.mp4). Recorded directly from the anonymous Auralane window, without audio; this is not a sequence of screenshots.
 
 ### Immersive lyrics
 
@@ -85,6 +92,38 @@ Standard keeps the traditional player layout instead of the compact glass bar. A
 Switch material, adjust component transparency, choose light/dark/system appearance, and configure a local image, video or cached YouTube background.
 
 ![Liquid Glass transparency and custom background settings](docs/screenshots/14-settings-appearance.png)
+
+### Home and personal discovery
+
+Browse recommendations, quick picks, recent favorites and mood filters without leaving the original three-pane workspace.
+
+![Anonymous Home and discovery page](docs/screenshots/19-home.png)
+
+### Library and collections
+
+Switch between playlists, albums, artists, podcasts and liked songs, with search, sorting and direct playback. This screenshot uses public collections as an anonymous demo library, not a private account export.
+
+![Demo library with public playlists and albums](docs/screenshots/20-library.png)
+
+### Artist pages and Session lyrics
+
+Artist biographies, popular songs, related releases, radio and follow controls sit beside Queue or synchronized lyrics.
+
+![OneRepublic artist page and Counting Stars Session lyrics](docs/screenshots/16-artist-session.png)
+
+### Mini player and floating desktop lyrics
+
+Keep compact playback controls or synchronized lyrics above other applications. The mini player's external drag handle moves the window without resizing it; desktop lyrics retain their own timing and support translation, word fill, opacity and font settings.
+
+| Mini player | Desktop lyrics |
+| --- | --- |
+| ![Current Auralane mini player](docs/screenshots/17-mini-player.png) | ![Current floating desktop lyrics](docs/screenshots/18-desktop-lyrics.png) |
+
+### GitHub updates
+
+Review the installed version, check for a release and update from Settings. Startup announcements and sidebar indicators lead to the same controls.
+
+![Built-in GitHub update settings](docs/screenshots/21-github-updates.png)
 
 ## Features
 

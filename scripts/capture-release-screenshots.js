@@ -8,6 +8,7 @@ async function main() {
     const page = await app.firstWindow();
     await page.waitForFunction(() => typeof state !== "undefined" && state.queueHydrated && state.performanceTools && state.workspaceAppearance, null, { timeout: 60000 });
     await app.evaluate(({ BrowserWindow }) => { const w = BrowserWindow.getAllWindows().find(w => w.getTitle() === "Auralane"); w.webContents.setZoomFactor(1); w.setContentSize(1600, 1000); });
+    await page.setViewportSize({ width:1600, height:1000 });
     const summary = await page.evaluate(async () => {
       els.audio.pause(); state.playing = false; state.settings.smartQueue = false;
       state.settings.lyricsAutoTranslate = false; state.settings.lyricsAutoRomanize = false;
@@ -16,6 +17,7 @@ async function main() {
       applyInterfaceLanguage("en", false);
       state.settings.material = "glass"; state.settings.reduceTransparency = false;
       state.settings.glassTransparency = 55; state.workspaceAppearance.refresh();
+      if (state.performanceTools.getSettings().artworkUrl) state.performanceTools.updateSettings({ video:true });
       document.documentElement.dataset.colorScheme = "dark";
       applyThemeColor([76, 173, 189], false);
       const result = await window.metro.search({ query: "Counting Stars OneRepublic", filter: "songs" });
@@ -43,6 +45,7 @@ async function main() {
     console.log("Live screenshot data:", JSON.stringify(summary));
     const directory = path.join(__dirname, "../docs/screenshots");
     const capture = async name => {
+      if (process.env.CAPTURE_ONLY && process.env.CAPTURE_ONLY !== name) return;
       await page.waitForTimeout(900);
       await page.evaluate(() => {
         els.loginLabel.textContent = "Demo";
@@ -58,11 +61,25 @@ async function main() {
       await page.screenshot({ path:path.join(directory, name) }); console.log("Captured anonymous", name);
     };
     await capture("10-liquid-glass-background.png");
-    await page.evaluate(() => { state.settings.lyricsFullscreenBackground = "custom"; setLyricsExpanded(true); });
-    await capture("11-focus-custom-background.png");
+    if (process.argv.includes("--record-demo")) {
+      const fs = require("node:fs/promises"), os = require("node:os");
+      const frames = await fs.mkdtemp(path.join(os.tmpdir(), "auralane-demo-"));
+      for (let index = 0; index < 16; index++) {
+        await page.waitForTimeout(125);
+        await page.screenshot({ path:path.join(frames, `frame-${String(index).padStart(3, "0")}.png`) });
+      }
+      require("node:child_process").execFileSync(process.env.FFMPEG_PATH || "ffmpeg", ["-y", "-framerate", "8", "-i", path.join(frames, "frame-%03d.png"), "-filter_complex", "[0:v]scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=256[p];[b][p]paletteuse=dither=sierra2_4a", "-loop", "0", path.join(directory, "15-liquid-glass-demo.gif")], { stdio:"pipe" });
+      console.log("Captured anonymous video-background GIF");
+    }
+    await page.evaluate(() => {
+      state.performanceTools.updateSettings({ video:false });
+      state.settings.lyricsFullscreenBackground = "theme";
+      setLyricsExpanded(true);
+    });
+    await capture("11-focus-lyrics.png");
     await page.evaluate(() => { state.lyricsShareSelection = new Set([releaseScreenshotIndex, releaseScreenshotIndex + 1]); return shareLyricsCard(); });
     await capture("12-lyric-card-editor.png");
-    await page.evaluate(() => { document.querySelector('.lyrics-card-dialog')?.close(); setLyricsExpanded(false); state.settings.material = "standard"; state.workspaceAppearance.refresh(); document.documentElement.dataset.colorScheme = "light"; });
+    await page.evaluate(() => { document.querySelector('.lyrics-card-dialog')?.close(); setLyricsExpanded(false); state.settings.material = "standard"; state.workspaceAppearance.refresh(); AuralaneLyricColors.apply({ enabled:false }); document.documentElement.dataset.colorScheme = "light"; });
     await capture("13-standard-light.png");
     await page.evaluate(() => { state.settings.material = "glass"; document.documentElement.dataset.colorScheme = "dark"; state.workspaceAppearance.refresh(); switchView("settings"); });
     await page.locator('.workspace-settings-tabs').getByRole('button', { name:'Appearance', exact:true }).click();

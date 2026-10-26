@@ -50,19 +50,23 @@ Unsigned macOS builds may require using **Open** from Finder's context menu on f
 
 ## Screenshots
 
-Captured in the running Electron app using live Counting Stars search/lyrics results. Account names and avatars are anonymized. The rain-window video is a user-selected background, not a bundled asset or a hosted video supplied by Auralane.
+Captured in the running Electron app using live Counting Stars search/lyrics results. Account names and avatars are anonymized. Only the custom-background introduction below enables the rain-window video; other screenshots have video backgrounds disabled. The video is user-selected, not a bundled asset or a hosted video supplied by Auralane.
 
 ### Dark Liquid Glass and a custom video background
 
 Clear media in the main area, translucent controls and song rows, a resizable Session panel, and the compact glass transport.
 
+![Animated dark Liquid Glass demo with an anonymous account and the selected video background](docs/screenshots/15-liquid-glass-demo.gif)
+
+Full-resolution screenshot:
+
 ![Dark Liquid Glass with a custom rain-window video and Counting Stars](docs/screenshots/10-liquid-glass-background.png)
 
-### Immersive lyrics with the same background
+### Immersive lyrics
 
 Select Song, Theme, Plain or Custom in the expanded lyrics display controls. Custom retains the configured image/video; changing this selection does not remove your main-window background.
 
-![Full-screen Counting Stars lyrics with the custom video background](docs/screenshots/11-focus-custom-background.png)
+![Full-screen Counting Stars lyrics with a theme background and video disabled](docs/screenshots/11-focus-lyrics.png)
 
 ### Live lyric-card editor
 

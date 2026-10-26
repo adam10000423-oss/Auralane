@@ -1,0 +1,14 @@
+.glass-transparency-control { display:grid;grid-template-columns:minmax(90px,1fr) 4ch;gap:12px;align-items:center;width:min(100%,300px); }
+.glass-transparency-control input[type=range] { width:100%;min-width:0;margin:0;padding:0;accent-color:var(--accent); }
+.glass-transparency-control output { color:var(--muted);font-variant-numeric:tabular-nums;text-align:end; }
+html[data-color-scheme] body[data-material=glass]:not([data-reduce-transparency=true]):not(.lyrics-maximized) :is(
+  .settings-card,.settings-category-nav,.topbar,.sidebar,.queue-panel,.player,.side-tabs,.queue-head,.lyrics-meta,.queue-tools,
+  .collection-toolbar,.collection-controls,.liked-toolbar,.playlists-toolbar,.more-menu,.account-switcher,.search-suggestions,
+  .quality-menu,.sleep-menu,.audio-output-menu,.compact-more-panel,.compact-volume-panel,.workspace-dialog,.online-room-dialog,
+  .startup-update-dialog,.playlist-modal,.language-picker-panel,.card,.row,.queue-row
+) { background:color-mix(in srgb,var(--surface) var(--glass-surface-fill,65%),transparent) !important; }
+html[data-color-scheme] body[data-material=glass]:not([data-reduce-transparency=true]):not(.lyrics-maximized) :is(.row,.queue-row):is(:hover,:focus-within,.active) { background:color-mix(in srgb,var(--accent) 12%,color-mix(in srgb,var(--surface) var(--glass-surface-fill,65%),transparent)) !important; }
+html[data-color-scheme] body[data-material=glass]:not([data-reduce-transparency=true]):not(.lyrics-maximized) .settings-card .source-tools { background:transparent !important; }
+html[data-color-scheme] body[data-material=glass]:not([data-reduce-transparency=true]):not(.lyrics-maximized) .settings-card,
+html[data-color-scheme] body[data-material=glass]:not([data-reduce-transparency=true]):not(.lyrics-maximized) .settings-category-nav { backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px); }
+html.apt-low-power body[data-material=glass] :is(.settings-card,.settings-category-nav) { backdrop-filter:none;-webkit-backdrop-filter:none; }

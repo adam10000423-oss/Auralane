@@ -1,0 +1,42 @@
+/* Fullscreen lyrics is an independent opaque scene, not a translucent sidebar. */
+body.lyrics-maximized { background:#08090c !important; }
+body.lyrics-maximized .bg-glow { display:none; }
+body.lyrics-maximized .shell { background:transparent; }
+body.lyrics-maximized .queue-panel { background-color: #08090c !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body[data-material=glass].lyrics-maximized .queue-panel { background:#08090c !important; }
+body[data-material=glass].lyrics-maximized .queue-panel::before, body[data-material=glass].lyrics-maximized .queue-panel::after { display:none !important; }
+body[data-material=glass].lyrics-maximized footer.player { background:#17181c !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+body.lyrics-maximized .main, body.lyrics-maximized .sidebar { visibility: hidden; }
+body.lyrics-maximized .sidebar-release-notice { visibility: hidden; }
+.lyrics-fullscreen-cover > video.apt-artwork { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:inherit; z-index:3; pointer-events:none; }
+.workspace-appearance-field ~ .auralane-performance-tools { border:0; padding:0; background:transparent; }
+body.lyrics-maximized #lyrics-expanded-meta { width: min(25vw, 320px); overflow: hidden; }
+body.lyrics-maximized #lyrics-expanded-meta > div { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+body[data-material=glass] .topbar { display: grid; grid-template-columns: minmax(80px, 140px) minmax(0,1fr) auto; gap: 14px; min-height: 64px; padding: 10px 14px; border-radius: 24px; }
+body[data-material=glass] .main { container-type:inline-size; container-name:glass-content; }
+body[data-material=glass] .topbar > :first-child { min-width: 0; }
+body[data-material=glass] .topbar .search-box { min-width: 0; }
+body[data-material=glass] .topbar .search { min-height: 44px; height: 44px; border-radius: 16px; background: rgb(255 255 255 / 5%); border: 1px solid rgb(255 255 255 / 15%); box-shadow: inset 0 1px 0 #ffffff12; gap: 6px; padding: 3px 5px 3px 12px; }
+body[data-material=glass] .topbar .search:focus-within { border-color: var(--accent); background: rgb(255 255 255 / 9%); }
+body[data-material=glass] .topbar #searchInput { min-width: 0; font-size: 14px; background: transparent; border: 0; padding: 0 4px; box-shadow: none; height: 36px; }
+body[data-material=glass] .topbar .search :is(.search-recognize,.search-history,.search-submit) { width: 34px; min-width: 34px; height: 34px; min-height: 34px; border-radius: 11px; padding: 7px; background: transparent; border: 0; box-shadow: none; transform: none; }
+body[data-material=glass] .topbar .search .search-submit { background: var(--accent); color: white; }
+body[data-material=glass] .topbar .search button:hover { background: rgb(255 255 255 / 12%); }
+body[data-material=glass] .topbar .search button::before, body[data-material=glass] .topbar .search button::after { display: none; }
+body[data-material=glass] .topbar .account-button { height: 42px; min-height: 42px; max-width: 160px; border-radius: 15px; background: rgb(255 255 255 / 6%); border-color: #ffffff26; }
+body[data-material=glass] :is(.account-switcher,.search-suggestions,.recognition-history-panel,.lyrics-quick-drawer,.lyrics-more-popover,.quality-menu,.sleep-menu,.audio-output-menu) { border-radius: 20px; border-color: #ffffff35; background: rgb(24 27 32 / 88%); box-shadow: inset 0 1px 0 #ffffff30, 0 12px 32px #0005; }
+body[data-material=glass]:not([data-reduce-transparency=true]):not(.apt-low-power):not(.workspace-dragging) :is(.account-switcher,.search-suggestions,.quality-menu) { background: rgb(24 27 32 / 64%); backdrop-filter: blur(20px) saturate(1.4); }
+body[data-material=glass] :is(.collection-toolbar,.liked-toolbar,.playlists-toolbar) { border-radius: 18px; background-color: #ffffff08; border-color: #ffffff20; }
+body[data-material=glass] .row:hover { background-color: #ffffff09; }
+body[data-material=glass] .collection-toolbar { border:1px solid #ffffff26; border-radius:20px; background:linear-gradient(150deg,#ffffff0f,#ffffff03),rgb(26 28 32 / 42%); box-shadow:inset 0 1px 0 #ffffff24; padding:12px; }
+body[data-material=glass]:not(.apt-low-power):not([data-reduce-transparency=true]):not(.workspace-dragging) .collection-toolbar { backdrop-filter:blur(16px) saturate(1.35); -webkit-backdrop-filter:blur(16px) saturate(1.35); }
+body[data-material=glass] :is(.sidebar-collapse,#lyricsExpandButton,#lyrics-restore-btn) { border:1px solid #ffffff38; border-radius:14px; background:linear-gradient(150deg,#ffffff1b,#ffffff05),rgb(30 32 37 / 65%); box-shadow:inset 0 1px 0 #ffffff38,0 3px 9px #0003; }
+body[data-material=glass] :is(.sidebar-collapse,#lyricsExpandButton,#lyrics-restore-btn):hover { background-color:#ffffff1a; }
+body[data-lyrics-align="auto"].lyrics-maximized .lyric-line.agent-v2 { text-align:right !important; margin-inline:14% 0 !important; }
+body[data-lyrics-align="auto"].lyrics-maximized .lyric-line.agent-v1 { text-align:left !important; margin-inline:0 14% !important; }
+@media (max-width:1100px) { body[data-material=glass] .topbar { grid-template-columns:minmax(0,1fr) auto; } body[data-material=glass] .topbar > :first-child { display:none; } }
+@media (max-width:600px) { body[data-material=glass] .topbar { gap:8px; padding:8px; } body[data-material=glass] #loginLabel, body[data-material=glass] .topbar .search-history { display:none; } }
+@container glass-content (max-width:700px) { body[data-material=glass] .topbar { grid-template-columns:minmax(0,1fr) auto; } body[data-material=glass] .topbar > :first-child { display:none; } }
+@container glass-content (max-width:420px) { body[data-material=glass] #loginLabel, body[data-material=glass] .topbar .search-history { display:none; } }
+@media (prefers-reduced-transparency:reduce) { body[data-material=glass] :is(.account-switcher,.search-suggestions,.quality-menu,.compact-more-panel,.compact-volume-panel) { backdrop-filter:none !important; background:var(--surface-2) !important; } }
+html.apt-low-power body[data-material=glass] :is(.player,.topbar,.workspace-dialog,.more-menu,.side-tabs,.account-switcher,.search-suggestions,.quality-menu,.compact-more-panel,.compact-volume-panel) { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; background:var(--surface-2) !important; }

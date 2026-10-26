@@ -1,0 +1,24 @@
+#playbackDiagnostics .playback-diagnostic-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+#playbackDiagnostics .playback-diagnostic-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+#playbackDiagnostics .playback-diagnostic-history {
+  padding-left: 18px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+#playbackDiagnostics .playback-diagnostic-history li { margin: 8px 0; }
+@media (max-width: 600px) {
+  #playbackDiagnostics .settings-field { display: grid; grid-template-columns: minmax(0, 1fr); }
+  #playbackDiagnostics .playback-diagnostic-value { text-align: left; }
+}

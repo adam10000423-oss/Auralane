@@ -1,0 +1,26 @@
+.lyric-color-toggle,.lyric-color-field { display:flex;align-items:center;gap:12px;min-height:44px; }
+.lyric-color-field { justify-content:space-between;border-bottom:1px solid var(--line-soft); }
+.lyric-color-field input[type=color] { width:48px;height:32px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer; }
+.lyric-color-field input:disabled { opacity:.4;cursor:default; }
+.lyric-color-settings > button { margin-top:16px; }
+/* A timed syllable is not necessarily a complete word. Keep its timing spans
+   inside one unbreakable lexical word, including for right-aligned singers. */
+#lyricsPane .lyric-wrap-word,.focus-lyrics-list .lyric-wrap-word { display:inline-block;white-space:nowrap !important;word-break:normal !important;overflow-wrap:normal !important;max-inline-size:none; }
+.lyric-wrap-word.lyric-word-overflow { font-size:var(--lyric-overflow-font-size,1em); }
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) .lyric-original { color:var(--lyric-custom-upcoming,var(--muted)) !important; }
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) .lyric-word:not(.current):not(.passed) { color:var(--lyric-custom-upcoming,var(--muted)) !important; }
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) .lyric-sung .lyric-original { color:var(--lyric-custom-passed,var(--accent)) !important; }
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) .lyric-line.active .lyric-original,
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) .lyric-word.current { color:var(--lyric-custom-active,var(--accent)) !important; }
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) .lyric-word.passed { color:var(--lyric-custom-passed,var(--accent)) !important; }
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) .lyric-grapheme {
+  color:transparent !important;-webkit-text-fill-color:transparent !important;
+  background-image:linear-gradient(var(--lyric-fill-direction,90deg),var(--lyric-custom-active,var(--accent)) 0%,var(--lyric-custom-active,var(--accent)) calc(var(--grapheme-progress) * 100%),var(--lyric-custom-upcoming,var(--muted)) calc(var(--grapheme-progress) * 100%),var(--lyric-custom-upcoming,var(--muted)) 100%) !important;
+}
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) :is(.lyric-word.passed .lyric-grapheme,.lyric-grapheme.passed,.lyric-sung .lyric-grapheme) { background-image:none !important;color:var(--lyric-custom-passed,var(--accent)) !important;-webkit-text-fill-color:var(--lyric-custom-passed,var(--accent)) !important; }
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) .lyric-translation { color:var(--lyric-custom-translation,var(--muted)) !important; }
+html[data-lyric-colors=custom] .current-line { color:var(--lyric-custom-upcoming,#b4b8c0) !important; }
+html[data-lyric-colors=custom] .current-line.plain,
+html[data-lyric-colors=custom] .karaoke-word.current .karaoke-word-fill { color:var(--lyric-custom-active,#86b8e5) !important; }
+html[data-lyric-colors=custom] .karaoke-word-fill { color:var(--lyric-custom-passed,#86b8e5) !important; }
+html[data-lyric-colors=custom] .secondary-line { color:var(--lyric-custom-translation,#b4b8c0) !important; }

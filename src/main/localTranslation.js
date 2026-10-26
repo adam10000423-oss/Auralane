@@ -1,6 +1,7 @@
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 const { app } = require("electron");
+const fs = require("node:fs");
 
 class LocalTranslationService {
   constructor() {
@@ -11,9 +12,7 @@ class LocalTranslationService {
   }
 
   paths() {
-    const root = app.isPackaged
-      ? path.join(process.resourcesPath, "local-translate")
-      : path.join(app.getAppPath(), "vendor", "local-translate");
+    const root = path.join(app.getPath("userData"), "offline-translation");
     return {
       executable: app.isPackaged
         ? path.join(root, "runtime", "local_translate.exe")
@@ -24,6 +23,8 @@ class LocalTranslationService {
   }
 
   ensureProcess() {
+    if (this.isAvailable && !this.isAvailable()) throw new Error("Offline translation is not installed.");
+    if (!fs.existsSync(path.join(app.getPath("userData"), "offline-translation", "installed.json"))) throw new Error("Offline translation is not installed.");
     if (this.process && !this.process.killed) return this.process;
     const locations = this.paths();
     this.process = spawn(locations.executable, [], {
@@ -39,8 +40,9 @@ class LocalTranslationService {
     this.process.stdout.setEncoding("utf8");
     this.process.stdout.on("data", (chunk) => this.consume(chunk));
     this.process.stderr.on("data", (chunk) => console.warn(`[offline-translate] ${String(chunk).trim()}`));
-    this.process.once("error", (error) => this.failAll(error));
-    this.process.once("exit", (code) => this.failAll(new Error(`Offline translation engine exited (${code ?? "unknown"}).`)));
+    const child = this.process;
+    child.once("error", (error) => { if (this.process === child) this.failAll(error); });
+    child.once("exit", (code) => { if (this.process === child) this.failAll(new Error(`Offline translation engine exited (${code ?? "unknown"}).`)); });
     return this.process;
   }
 
@@ -120,6 +122,14 @@ class LocalTranslationService {
     if (this.process && !this.process.killed) this.process.kill();
     this.process = null;
     this.failAll(new Error("Offline translation engine closed."));
+  }
+
+  async stopAndWait() {
+    const child = this.process;
+    const exited = child && child.exitCode === null
+      ? new Promise(resolve => child.once("exit", resolve)) : Promise.resolve();
+    this.close();
+    await exited;
   }
 }
 

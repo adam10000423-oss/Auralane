@@ -7,6 +7,10 @@ let lastState = {};
 
 function render(state = {}) {
   lastState = state;
+  document.documentElement.dataset.colorScheme=state.colorScheme==="light"?"light":"dark";
+  const rgb=state.readableThemeColor||state.themeColor||[80,100,140];
+  document.documentElement.style.setProperty("--theme-color",rgb.join(", "));
+  document.documentElement.style.setProperty("--mini-on-accent",rgb.reduce((sum,value,index)=>sum+Number(value)*[.299,.587,.114][index],0)>150?"#101014":"#fff");
   const track = state.track || {};
   title.textContent = track.title || "Nothing playing";
   artist.textContent = track.artist || track.artists?.map((item) => item.name || item).join(", ") || "Open Auralane to choose music";

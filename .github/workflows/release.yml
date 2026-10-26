@@ -20,7 +20,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit --audit-level=high
+      - run: node --test server/listen-together/server.test.js server/listen-together/permissions.test.js
 
   windows:
     needs: verify
@@ -34,11 +35,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Prepare optional local translation directories
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force vendor/local-translate/runtime | Out-Null
-          New-Item -ItemType Directory -Force vendor/local-translate/models | Out-Null
       - run: npm run dist -- --win --publish never
       - name: Generate Windows checksums
         shell: pwsh

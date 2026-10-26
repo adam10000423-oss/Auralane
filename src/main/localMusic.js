@@ -77,31 +77,33 @@ async function scanLocalMusic(root, coverRoot, onProgress = () => {}) {
   return tracks;
 }
 
-function streamFile(filePath, request, response) {
+function streamFile(filePath, request, response, contentType = "") {
   const stat = fs.statSync(filePath);
   const range = request.headers.range;
   const extension = path.extname(filePath).toLowerCase();
-  const mime = extension === ".mp3" ? "audio/mpeg"
+  const mime = contentType || (extension === ".mp3" ? "audio/mpeg"
     : extension === ".flac" ? "audio/flac"
       : extension === ".wav" ? "audio/wav"
         : extension === ".m4a" || extension === ".aac" ? "audio/mp4"
           : extension === ".ogg" || extension === ".opus" ? "audio/ogg"
-            : "audio/webm";
+            : "audio/webm");
+  const send=options=>{const stream=fs.createReadStream(filePath,options);response.once("close",()=>stream.destroy());stream.on("error",()=>response.destroy()).pipe(response);};
   if (!range) {
-    response.writeHead(200, { "Content-Type": mime, "Content-Length": stat.size, "Accept-Ranges": "bytes" });
-    fs.createReadStream(filePath).pipe(response);
+    response.writeHead(200, { "Content-Type": mime, "Content-Length": stat.size, "Accept-Ranges": "bytes", "X-Content-Type-Options":"nosniff" });
+    if(request.method==="HEAD")response.end();else send();
     return;
   }
-  const match = /bytes=(\d*)-(\d*)/.exec(range);
-  const start = match?.[1] ? Number(match[1]) : 0;
-  const end = match?.[2] ? Math.min(Number(match[2]), stat.size - 1) : stat.size - 1;
+  const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+  const start = match?.[1] ? Number(match[1]) : match?.[2] ? Math.max(0,stat.size-Number(match[2])) : 0;
+  const end = match?.[1]&&match?.[2] ? Math.min(Number(match[2]), stat.size - 1) : stat.size - 1;
+  if(!match||(!match[1]&&!match[2])||!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||start>end||start>=stat.size){response.writeHead(416,{"Content-Range":`bytes */${stat.size}`});response.end();return;}
   response.writeHead(206, {
     "Content-Type": mime,
     "Content-Length": end - start + 1,
     "Content-Range": `bytes ${start}-${end}/${stat.size}`,
     "Accept-Ranges": "bytes"
   });
-  fs.createReadStream(filePath, { start, end }).pipe(response);
+  if(request.method==="HEAD")response.end();else send({start,end});
 }
 
 module.exports = { scanLocalMusic, streamFile };

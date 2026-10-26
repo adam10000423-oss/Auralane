@@ -45,7 +45,8 @@ for (const match of rendererSource.matchAll(/componentText\(["']([^"']+)["']\)/g
 
 const protectedNames = [
   "Auralane", "YouTube Music", "YouTube", "BetterLyrics", "LRCLIB", "KuGou",
-  "Paxsenix", "LyricsPlus", "Lyrics.ovh", "LRC", "DSP", "ReplayGain"
+  "Paxsenix", "LyricsPlus", "Lyrics.ovh", "LRC", "DSP", "ReplayGain",
+  "lrc.red", "BiniLyrics", "Unison", "BetterLyrics Portato", "Genius"
 ];
 const languageTargets = {
   "zh-TW": "zh-TW",
@@ -57,6 +58,9 @@ const separator = "\n<<<AURALANE_I18N_SPLIT_7F3A>>>\n";
 
 const overrides = {
   "zh-TW": {
+    "Play from the beginning": "從頭播放",
+    "Autoplay recommendations":"播放完畢後接續推薦歌曲",
+    Spotify: "Spotify", Replay: "聆聽回顧", "Other versions": "其他版本",
     "Back to artist": "返回藝人頁",
     Play: "播放", Pause: "暫停", Search: "搜尋", Copy: "複製", Share: "分享",
     Translate: "翻譯", Romanize: "羅馬拼音", Duet: "雙人", Timeline: "時間軸",
@@ -72,6 +76,9 @@ const overrides = {
     "No local music yet": "尚無本地音樂", "Add a folder to build your local music library.": "新增資料夾以建立本地音樂庫。"
   },
   "zh-CN": {
+    "Play from the beginning": "从头播放",
+    "Autoplay recommendations":"播放完毕后接续推荐歌曲",
+    Spotify: "Spotify", Replay: "收听回顾", "Other versions": "其他版本",
     "Back to artist": "返回艺人页",
     Play: "播放", Pause: "暂停", Search: "搜索", Copy: "复制", Share: "分享",
     Translate: "翻译", Romanize: "罗马拼音", Duet: "双人", Timeline: "时间轴",
@@ -87,6 +94,9 @@ const overrides = {
     "No local music yet": "暂无本地音乐", "Add a folder to build your local music library.": "添加文件夹以建立本地音乐库。"
   },
   ja: {
+    "Play from the beginning": "最初から再生",
+    "Autoplay recommendations":"キュー終了後におすすめを再生",
+    Spotify: "Spotify", Replay: "リプレイ", "Other versions": "他のバージョン",
     "Back to artist": "アーティストページに戻る",
     Play: "再生", Pause: "一時停止", Search: "検索", Copy: "コピー", Share: "共有",
     Translate: "翻訳", Romanize: "ローマ字", Duet: "デュエット", Timeline: "タイムライン",
@@ -103,6 +113,9 @@ const overrides = {
     "No local music yet": "ローカル音楽はまだありません", "Add a folder to build your local music library.": "フォルダーを追加してローカル音楽ライブラリを作成します。"
   },
   ko: {
+    "Play from the beginning": "처음부터 재생",
+    "Autoplay recommendations":"대기열 종료 후 추천곡 재생",
+    Spotify: "Spotify", Replay: "감상 회고", "Other versions": "다른 버전",
     "Back to artist": "아티스트 페이지로 돌아가기",
     Play: "재생", Pause: "일시중지", Search: "검색", Copy: "복사", Share: "공유",
     Translate: "번역", Romanize: "로마자", Duet: "듀엣", Timeline: "타임라인",
@@ -181,6 +194,8 @@ async function main() {
   dictionaries.en = { ...dictionaries.en, ...Object.fromEntries(values.map((value) => [value, value])) };
   for (const [language, target] of Object.entries(languageTargets)) {
     const dictionary = dictionaries[language] || {};
+    for (const source of values) if (!dictionary[source] && overrides[language]?.[source]) dictionary[source] = overrides[language][source];
+    for (const name of protectedNames) if (sources.has(name)) dictionary[name] = name;
     for (const batch of batches(values.filter((value) => !dictionary[value]))) {
       const translated = await translateBatch(batch, target);
       batch.forEach((source, index) => {

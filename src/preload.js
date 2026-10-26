@@ -1,6 +1,66 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+// Observe resolution without changing its return value or error behavior.
+const playbackDiagnosticListeners = new Set();
+let artworkDownloadSequence=0;
+async function downloadArtworkVideo(url,onProgress){
+  const requestId=++artworkDownloadSequence;
+  const listener=(_event,value)=>{if(value?.requestId===requestId&&typeof onProgress==="function")onProgress(value);};
+  ipcRenderer.on("artwork:download-progress",listener);
+  try{return await ipcRenderer.invoke("artwork:download-youtube",{url,requestId});}
+  finally{ipcRenderer.removeListener("artwork:download-progress",listener);}
+}
+let playbackDiagnosticSequence = 0;
+function emitPlaybackDiagnostic(value) {
+  for (const listener of playbackDiagnosticListeners) {
+    try { listener(value); } catch { /* Diagnostics must not interrupt playback. */ }
+  }
+}
+async function observedPlayback(payload) {
+  const id = ++playbackDiagnosticSequence;
+  const started = performance.now();
+  const videoId = String(payload?.videoId || "");
+  const retry = Boolean(payload?.excludeItags?.length || payload?.excludeClients?.length);
+  emitPlaybackDiagnostic({ phase: "start", id, videoId, retry });
+  try {
+    const result = await ipcRenderer.invoke("ytm:playback", payload);
+    emitPlaybackDiagnostic({
+      phase: "resolved", id, videoId, resolutionMs: performance.now() - started,
+      mode: result?.mode, hasStream: Boolean(result?.streamUrl),
+      client: result?.client, itag: result?.itag,
+      mimeType: result?.mimeType || result?.format?.mimeType,
+      bitrate: result?.bitrate || result?.format?.bitrate,
+      reason: result?.reason
+    });
+    return result;
+  } catch (error) {
+    emitPlaybackDiagnostic({ phase: "error", id, videoId, resolutionMs: performance.now() - started, reason: error?.message });
+    throw error;
+  }
+}
+async function observedLyricsSearch(track, options) {
+  const started = performance.now();
+  try {
+    const result = await ipcRenderer.invoke("lyrics:search", { track, options });
+    emitPlaybackDiagnostic({ kind: "lyrics", elapsedMs: performance.now() - started,
+      providers: (result?.attemptedProviders || []).slice(0, 16),
+      candidateCount: Array.isArray(result?.candidates) ? result.candidates.length : 0,
+      errors: (result?.errors || []).slice(0, 16).map(error => ({ provider: error.provider, message: error.message })) });
+    return result;
+  } catch (error) {
+    emitPlaybackDiagnostic({ kind: "lyrics", elapsedMs: performance.now() - started,
+      providers: [], candidateCount: 0, errors: [{ provider: "search", message: error?.message }] });
+    throw error;
+  }
+}
+
 contextBridge.exposeInMainWorld("metro", {
+  featureRequest: (request) => ipcRenderer.invoke("features:request", request),
+  onFeatureEvent: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("features:event", listener);
+    return () => ipcRenderer.removeListener("features:event", listener);
+  },
   authStatus: () => ipcRenderer.invoke("auth:status"),
   login: () => ipcRenderer.invoke("auth:login"),
   logout: () => ipcRenderer.invoke("auth:logout"),
@@ -21,6 +81,9 @@ contextBridge.exposeInMainWorld("metro", {
   setExpandedLyricsKeepAwake: (enabled) => ipcRenderer.invoke("app:set-expanded-lyrics-keep-awake", enabled),
   getPreferences: () => ipcRenderer.invoke("preferences:get"),
   setPreference: (payload) => ipcRenderer.invoke("preferences:set", payload),
+  pickArtworkVideo: () => ipcRenderer.invoke("artwork:pick-local"),
+  clearArtworkVideo: () => ipcRenderer.invoke("artwork:clear-local"),
+  downloadArtworkVideo,
   toggleMiniPlayer: (state) => ipcRenderer.invoke("mini:toggle", { state }),
   openMiniPlayer: (state) => ipcRenderer.invoke("mini:open", { state }),
   closeMiniPlayer: () => ipcRenderer.invoke("mini:close"),
@@ -47,6 +110,7 @@ contextBridge.exposeInMainWorld("metro", {
   clearLocalMusic: () => ipcRenderer.invoke("local-music:clear"),
   onLocalMusicProgress: (callback) => ipcRenderer.on("local-music:progress", (_event, value) => callback(value)),
   getShortcuts: () => ipcRenderer.invoke("shortcuts:get"),
+  refreshMediaKeys: () => ipcRenderer.invoke("media:refresh"),
   setShortcuts: (value) => ipcRenderer.invoke("shortcuts:set", value),
   updateStatus: () => ipcRenderer.invoke("update:status"),
   checkForUpdates: (repository) => ipcRenderer.invoke("update:check", repository),
@@ -81,9 +145,14 @@ contextBridge.exposeInMainWorld("metro", {
   savedPlaylists: () => ipcRenderer.invoke("ytm:saved-playlists"),
   playlist: (playlistId) => ipcRenderer.invoke("ytm:playlist", playlistId),
   queue: (payload) => ipcRenderer.invoke("ytm:queue", payload),
-  playback: (payload) => ipcRenderer.invoke("ytm:playback", payload),
+  playback: observedPlayback,
+  onPlaybackDiagnostic: (callback) => {
+    if (typeof callback !== "function") return () => {};
+    playbackDiagnosticListeners.add(callback);
+    return () => playbackDiagnosticListeners.delete(callback);
+  },
   lyrics: (track, options) => ipcRenderer.invoke("lyrics:find", { track, options }),
-  searchLyrics: (track, options) => ipcRenderer.invoke("lyrics:search", { track, options }),
+  searchLyrics: observedLyricsSearch,
   translateLyrics: (lines, options) => ipcRenderer.invoke("lyrics:translate", { lines, options }),
   romanizeLyrics: (lines) => ipcRenderer.invoke("lyrics:romanize", { lines }),
   cachedLyrics: (trackId) => ipcRenderer.invoke("lyrics:cache-get", trackId),

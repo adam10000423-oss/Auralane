@@ -1,0 +1,54 @@
+.auralane-performance-tools {
+  width: 100%;
+  min-width: 0;
+  padding: 16px;
+  border-block: 1px solid var(--line, #343438);
+  background: var(--surface, #121214);
+  color: var(--ink, #f5f5f6);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.auralane-performance-tools,
+.auralane-performance-tools * { box-sizing: border-box; letter-spacing: 0; }
+.auralane-performance-tools h3 { margin: 0 0 12px; font-size: 15px; }
+.auralane-performance-tools .apt-toggle { display: flex; gap: 10px; align-items: center; padding-block: 7px; overflow-wrap: anywhere; }
+.auralane-performance-tools input[type="checkbox"] { flex: 0 0 16px; width: 16px; height: 16px; margin: 0; accent-color: var(--accent, #e75065); }
+.auralane-performance-tools .apt-artwork-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-block: 12px; }
+.auralane-performance-tools .apt-artwork-form label { display: grid; gap: 5px; flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+.auralane-performance-tools input[type="url"],
+.auralane-performance-tools button { min-height: 36px; max-width: 100%; min-width: 0; padding: 7px 10px; border: 1px solid var(--line, #343438); border-radius: 6px; background: var(--surface-2, #202023); color: inherit; font: inherit; }
+.auralane-performance-tools input[type="url"] { width: 100%; }
+.auralane-performance-tools button { cursor: pointer; white-space: normal; overflow-wrap: anywhere; }
+.auralane-performance-tools button:disabled { opacity: .5; cursor: default; }
+.auralane-performance-tools button:hover:not(:disabled) { background: var(--button-hover, #343438); }
+.auralane-performance-tools :focus-visible { outline: 2px solid var(--accent, #e75065); outline-offset: 2px; }
+.auralane-performance-tools .apt-result { display: block; min-height: 22px; margin-bottom: 8px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.auralane-performance-tools .apt-status { min-height: 20px; margin-block: 8px; color: var(--muted, #b1b1b8); overflow-wrap: anywhere; }
+.auralane-performance-tools .apt-artwork { display: block; width: min(100%, 360px); aspect-ratio: 1; object-fit: contain; background: #09090b; }
+.apt-youtube-artwork { width:min(100%,360px);aspect-ratio:1;background:#09090b;position:relative; }
+.apt-youtube-artwork iframe { display:block;width:100%;height:100%;border:0; }
+.apt-youtube-artwork[hidden] { display:none !important; }
+.lyrics-fullscreen-cover > .apt-youtube-artwork { position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;overflow:hidden;z-index:3; }
+.lyrics-fullscreen-cover:has(> .apt-youtube-artwork:not([hidden])) { animation:none !important;transform:translateY(-50%) !important;border-radius:12px !important; }
+.apt-artwork-file-name { flex:1 1 100%;font-size:12px;color:var(--muted);overflow-wrap:anywhere; }
+.auralane-performance-tools [hidden] { display: none !important; }
+
+/* Applies to the supplied motionRoot, normally documentElement. Host JS must
+   also consume onPerformanceChange to skip imperative visualizer/RAF work. */
+.apt-reduced-motion *, .apt-reduced-motion *::before, .apt-reduced-motion *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+.apt-reduced-motion #nowArt,
+.apt-reduced-motion #focusArt,
+.apt-reduced-motion #bgGlow,
+.apt-reduced-motion .focus-bg,
+.apt-reduced-motion .lyrics-cover-surface { transform: none !important; }
+.apt-low-power #bgGlow, .apt-low-power .focus-bg { filter: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .auralane-performance-tools *, .auralane-performance-tools *::before, .auralane-performance-tools *::after {
+    animation: none !important; transition: none !important; scroll-behavior: auto !important;
+  }
+}

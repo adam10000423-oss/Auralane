@@ -1,0 +1,56 @@
+.source-tools {
+  color: var(--text-primary, #e9e9ed);
+  background: var(--bg-primary, #19191e);
+  font: 14px/1.5 system-ui, sans-serif;
+  letter-spacing: 0;
+  padding: 20px;
+  max-width: 960px;
+  box-sizing: border-box;
+  color-scheme: dark;
+}
+.source-tools *, .source-tools *::before, .source-tools *::after { box-sizing: border-box; letter-spacing: 0; }
+.source-tools [hidden] { display: none !important; }
+.source-tools h2 { font-size: 18px; margin: 0 0 12px; overflow-wrap: anywhere; }
+.source-tools button, .source-tools input { font: inherit; color: inherit; }
+.source-tools button { min-height: 36px; padding: 6px 12px; border: 1px solid #64646f; border-radius: 5px; background: #303038; cursor: pointer; white-space: normal; overflow-wrap: anywhere; }
+.source-tools button:hover:not(:disabled) { background: #41414b; }
+.source-tools button:disabled { opacity: .5; cursor: default; }
+.source-tools :focus-visible { outline: 2px solid #6cdbc6; outline-offset: 3px; }
+.source-tools input:not([type="checkbox"]) { width: 100%; min-width: 0; min-height: 38px; padding: 7px 9px; background: #222228; border: 1px solid #64646f; border-radius: 4px; }
+.source-tools input[type="checkbox"] { accent-color: #6cdbc6; width: 18px; height: 18px; flex: 0 0 18px; }
+.source-tools .st-sources, .source-tools .st-version-list { list-style: none; margin: 0; padding: 0; }
+.source-tools .st-source, .source-tools .st-version { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid #42424c; }
+.source-tools .st-details { display: flex; flex-direction: column; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.source-tools .st-version > button { flex: 0 0 auto; min-width: 72px; white-space: nowrap; }
+.source-tools .st-endpoint, .source-tools .st-version-meta { color: #b9b9c4; font-size: 12px; }
+.source-tools .st-health { font-size: 12px; color: #b9b9c4; }
+.source-tools .st-health[data-state="healthy"] { color: #6cdbc6; }
+.source-tools .st-health[data-state="unhealthy"] { color: #ff9caa; }
+.source-tools .st-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0; max-width: 100%; }
+.source-tools .st-toggle { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; }
+.source-tools .st-fields { border: 0; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; min-width: 0; }
+.source-tools legend { font-size: 16px; font-weight: 600; margin-bottom: 12px; padding: 0; }
+.source-tools .st-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.source-tools .st-field:has(input[type="checkbox"]) { flex-direction: row; align-items: center; }
+.source-tools .st-fields > .st-actions { grid-column: 1 / -1; }
+.source-editor .st-fields { border:0; padding:0; margin:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.source-editor legend { display:none; }
+.source-editor .st-field { display:grid; gap:8px; min-width:0; font-size:13px; }
+.source-editor .st-field input:not([type=checkbox]) { width:100%; box-sizing:border-box; }
+.source-editor .st-field:has(input[type=checkbox]) { display:flex; align-items:center; }
+.source-editor .st-actions { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.source-editor .st-message { font-size:13px; color:var(--muted); }
+.source-editor .st-message:empty { display:none; }
+@media(max-width:560px){.source-editor .st-fields{grid-template-columns:minmax(0,1fr);}}
+.source-tools .st-versions { margin-top: 30px; padding-top: 20px; border-top: 1px solid #64646f; }
+.source-tools .st-query { display: flex; gap: 10px; align-items: end; }
+.source-tools .st-query label { flex: 1; }
+.source-tools .st-message { min-height: 21px; margin: 8px 0; overflow-wrap: anywhere; }
+.source-tools .st-empty { color: #b9b9c4; padding: 10px 0; }
+@media (max-width: 640px) {
+  .source-tools { padding: 14px; }
+  .source-tools .st-fields { grid-template-columns: minmax(0, 1fr); }
+  .source-tools .st-source { align-items: stretch; flex-direction: column; gap: 10px; }
+  .source-tools .st-query { align-items: stretch; flex-direction: column; }
+  .source-tools .st-version { gap: 10px; }
+}

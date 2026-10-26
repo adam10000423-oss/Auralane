@@ -1,0 +1,132 @@
+"use strict";
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const http = require("node:http");
+const { createListenTogether, LIMITS } = require("../src/main/listenTogether");
+const { createClient, applyEvent, projectedPosition, createPlaybackFollower } = require("../src/renderer/togetherTools");
+const song = (id = "song1") => ({ id, title: "Song", artist: "Artist", duration: 100, url: "private-stream", filePath: "C:/private" });
+async function setup(t) {
+  const room = createListenTogether();
+  const invite = await room.enable();
+  t.after(() => room.disable());
+  const get = (route, options = {}) => fetch(invite.url + route, { headers: { Authorization: `Bearer ${invite.token}` }, ...options });
+  const command = (input) => room.command({ ...input, expectedSeq: room.getState().seq });
+  return { room, invite, get, command };
+}
+async function until(predicate) {
+  const deadline = Date.now() + 3000;
+  while (!predicate()) {
+    if (Date.now() >= deadline) throw new Error("Timed out");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+}
+test("inert lifecycle, explicit interface opt-in, token rotation and shutdown", async (t) => {
+  const room = createListenTogether();
+  assert.equal(room.status().enabled, false);
+  assert.throws(() => room.getState(), /disabled/);
+  await assert.rejects(room.enable({ host: "0.0.0.0", allowLan: true }), /LAN/);
+  await assert.rejects(room.enable({ host: "192.168.1.2" }), /LAN/);
+  const first = await room.enable();
+  t.after(() => room.disable());
+  assert.equal(new URL(first.url).search, "");
+  assert.equal(first.token.length, 43);
+  await assert.rejects(room.enable(), /already enabled/);
+  await room.disable();
+  assert.equal(room.status().enabled, false);
+  assert.throws(() => room.command({ type: "play", expectedSeq: 0 }), /disabled/);
+  const second = await room.enable();
+  assert.notEqual(first.token, second.token);
+  assert.notEqual(first.roomId, second.roomId);
+  assert.equal((await fetch(second.url + "/api/state", { headers: { Authorization: `Bearer ${first.token}` } })).status, 401);
+});
+test("HTTP authentication, no URL secrets, origin defense and read-only guests", async (t) => {
+  const { invite, get } = await setup(t);
+  assert.equal((await fetch(invite.url + "/api/state")).status, 401);
+  assert.equal((await get("/api/state", { headers: { Authorization: "Bearer wrong" } })).status, 401);
+  assert.equal((await get("/api/state", { headers: { Authorization: "Bearer " + "é".repeat(43) } })).status, 401);
+  assert.equal((await get("/api/state?token=" + invite.token)).status, 400);
+  assert.equal((await get("/api/state", { headers: { Origin: "https://evil.example" } })).status, 403);
+  const rebindingStatus = await new Promise((resolve, reject) => {
+    http.get(invite.url + "/api/state", { headers: { Host: "evil.example" } }, (response) => { response.resume(); resolve(response.statusCode); }).on("error", reject);
+  });
+  assert.equal(rebindingStatus, 403);
+  assert.equal((await get("/api/command", { method: "POST", body: '{"type":"play"}' })).status, 400);
+  assert.equal((await get("/api/command")).status, 404);
+  const response = await get("/api/state");
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(JSON.stringify(await response.json()).includes(invite.token), false);
+  for (const route of ["/", "/togetherTools.js", "/togetherTools.css"]) assert.equal((await fetch(invite.url + route)).status, 200);
+});
+test("host controls, authoritative clock, atomic validation, bounds and queue selection", async (t) => {
+  const { room, command } = await setup(t);
+  assert.throws(() => command({ type: "play" }), /Select/);
+  command({ type: "queue", index: 0, deleteCount: 0, items: [song()] });
+  assert.deepEqual(Object.keys(room.getState().queue[0]), ["id", "title", "artist", "duration"]);
+  assert.throws(() => room.command({ type: "select", index: 0, expectedSeq: 0 }), /Stale/);
+  const before = room.getState();
+  assert.throws(() => command({ type: "queue", index: 0, deleteCount: 1, items: [song("ok"), song("bad/id")] }), /Invalid/);
+  assert.deepEqual(room.getState().queue, before.queue);
+  assert.equal(room.getState().seq, before.seq);
+  command({ type: "select", index: 0 });
+  command({ type: "seek", position: 30, serverTime: 0 });
+  command({ type: "play", anchoredAt: 0 });
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  assert.ok(room.getState().playback.position > 30);
+  command({ type: "pause" });
+  const paused = room.getState().playback.position;
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(room.getState().playback.position, paused);
+  for (const value of [-1, 101, NaN, Infinity, "3"]) assert.throws(() => command({ type: "seek", position: value }), /Invalid/);
+  command({ type: "queue", index: 0, deleteCount: 0, items: [song("inserted")] });
+  assert.equal(room.getState().playback.index, 1);
+  assert.equal(room.getState().playback.position, paused);
+  command({ type: "queue", index: 1, deleteCount: 1, items: [] });
+  assert.equal(room.getState().playback.index, -1);
+  assert.equal(room.getState().playback.playing, false);
+  assert.throws(() => command({ type: "queue", index: 0, deleteCount: 0, items: Array(LIMITS.delta + 1).fill(song()) }), /Invalid/);
+  for (let i = 0; i < 3; i++) command({ type: "queue", index: 0, deleteCount: 0, items: Array(50).fill(song()) });
+  command({ type: "queue", index: 0, deleteCount: 0, items: Array(49).fill(song()) });
+  assert.equal(room.getState().queue.length, LIMITS.queue);
+  assert.throws(() => command({ type: "queue", index: 0, deleteCount: 0, items: [song()] }), /Invalid/);
+});
+test("real SSE client receives ordered deltas and reconnect snapshot; disable closes streams", async (t) => {
+  const { room, invite, command } = await setup(t);
+  const events = [], states = [];
+  const unsubscribe = room.subscribe((event) => events.push(event));
+  t.after(unsubscribe);
+  const client = createClient({ ...invite, onState: (state) => states.push(state) });
+  client.start();
+  t.after(() => client.stop());
+  await until(() => states.length === 1);
+  assert.equal(room.status().clients, 1);
+  command({ type: "queue", index: 0, deleteCount: 0, items: [song()] });
+  command({ type: "select", index: 0 });
+  command({ type: "play" });
+  await until(() => client.getState()?.seq === 3);
+  assert.equal(events[0].queue, undefined);
+  assert.equal(events[0].delta.items.length, 1);
+  assert.deepEqual(states.map((s) => s.seq), [0, 1, 2, 3]);
+  assert.ok(client.position() >= 0 && client.position() < 2);
+  await client.stop();
+  command({ type: "seek", position: 50 });
+  client.start();
+  await until(() => client.getState()?.seq === 4);
+  assert.ok(client.position() >= 50);
+  await room.disable();
+  await client.stop();
+  assert.equal(room.status().clients, 0);
+});
+test("event gaps are rejected; playback projection clamps; follower invokes local playback", async () => {
+  const state = { roomId: "room", seq: 1, queue: [song()], playback: { index: 0, position: 2, anchoredAt: 1000, playing: true } };
+  assert.equal(projectedPosition(state, 4000), 5);
+  assert.equal(projectedPosition(state, 999999), 100);
+  assert.throws(() => applyEvent(state, { type: "playback", roomId: "room", seq: 3 }), /gap/);
+  assert.throws(() => applyEvent(state, { type: "playback", roomId: "other", seq: 2 }), /gap/);
+  const calls = [];
+  const follower = createPlaybackFollower({ client: { position: () => 8, getState: () => null }, loadTrack: async (s) => calls.push(s.id), play: async () => calls.push("play"), pause: async () => calls.push("pause"), seek: async (n) => calls.push(n), getPosition: () => 0 });
+  await follower.update(state);
+  assert.deepEqual(calls, ["song1", 8, "play"]);
+  await follower.dispose();
+  assert.equal(calls.at(-1), "pause");
+});

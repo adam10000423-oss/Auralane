@@ -3,19 +3,25 @@ const fs = require("node:fs");
 const crypto = require("node:crypto");
 const http = require("node:http");
 const { Readable } = require("node:stream");
+const workspacePreferences = require("./workspacePreferences");
+const {createBackgroundCache} = require("./backgroundCache");
+let backgroundCache;
+const artworkRevisions = new Map();
+function artworkDownloadCache(){return backgroundCache ||= createBackgroundCache({root:path.join(app.getPath("userData"),"background-videos"),resolveVideo:id=>youtube.playback(id,null,"balanced",{videoOnly:true})});}
+async function discardManagedArtwork(entry){if(entry?.managed&&!Object.values(state.preferences?.artworkFiles||{}).some(other=>other.path===entry.path))await artworkDownloadCache().remove(entry.path);}
 const { pathToFileURL } = require("node:url");
-const { app, BrowserWindow, Menu, Tray, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, nativeImage, powerSaveBlocker, screen, session, shell } = require("electron");
+const { app, BrowserWindow, Menu, Tray, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, nativeImage, nativeTheme, powerSaveBlocker, safeStorage, screen, session, shell } = require("electron");
 
 // A separate profile can be used for local build verification while an
 // installed Auralane instance is running. Normal launches remain single-instance.
 const BUILD_PREVIEW = process.argv.includes("--auralane-preview");
+if (BUILD_PREVIEW) app.setPath("userData", path.join(app.getPath("appData"), "Auralane-Preview"));
 const SINGLE_INSTANCE_LOCK = BUILD_PREVIEW || app.requestSingleInstanceLock();
 if (!SINGLE_INSTANCE_LOCK) {
   app.quit();
 }
 
 app.commandLine.appendSwitch("disable-gpu-shader-disk-cache");
-app.commandLine.appendSwitch("disable-reading-from-canvas");
 app.commandLine.appendSwitch("disk-cache-size", "1");
 app.commandLine.appendSwitch("media-cache-size", "1");
 app.commandLine.appendSwitch("enable-features", "VaapiVideoDecoder");
@@ -98,6 +104,8 @@ const { mergePlaybackSession } = require("./playbackSession");
 const { recognizeMusic } = require("./musicRecognition");
 const { scanLocalMusic, streamFile } = require("./localMusic");
 const { LocalTranslationService } = require("./localTranslation");
+const { registerFeatures } = require("./featureHost");
+let featureHost;
 
 let mainWindow;
 let loginWindow;
@@ -402,12 +410,15 @@ function configureUpdater(repository) {
   return normalized;
 }
 
+let availableRelease = null;
 function sendUpdateEvent(type, payload = {}) {
+  if(type==="available")availableRelease={type,...payload};
+  if(type==="current")availableRelease=null;
   mainWindow?.webContents.send("update:event", { type, ...payload });
 }
 
 autoUpdater.on("checking-for-update", () => sendUpdateEvent("checking"));
-autoUpdater.on("update-available", (info) => sendUpdateEvent("available", { version: info.version, releaseName: info.releaseName || "" }));
+autoUpdater.on("update-available", (info) => sendUpdateEvent("available", { version: info.version, releaseName: info.releaseName || "",releaseNotes:info.releaseNotes||"" }));
 autoUpdater.on("update-not-available", (info) => sendUpdateEvent("current", { version: info?.version || app.getVersion() }));
 autoUpdater.on("download-progress", (progress) => sendUpdateEvent("progress", {
   percent: Number(progress.percent || 0),
@@ -597,6 +608,19 @@ function startRendererServer() {
           }
           streamFile(track.localPath, request, response);
           return;
+        }
+
+        if(pathname.startsWith("/artwork-video/")){
+          const token=pathname.slice("/artwork-video/".length);
+          const account=workspacePreferences.read(state).workspaceAccount;
+          const entry=state?.preferences?.artworkFiles?.[account];
+          const types={".mp4":"video/mp4",".m4v":"video/mp4",".webm":"video/webm",".mov":"video/quicktime",".jpg":"image/jpeg",".jpeg":"image/jpeg",".png":"image/png",".webp":"image/webp",".gif":"image/gif",".avif":"image/avif"};
+          const type=entry?.path&&types[path.extname(entry.path).toLowerCase()];
+          if(!/^[a-f0-9-]{36}$/.test(token)||entry?.token!==token||!type||!fs.existsSync(entry.path)||!fs.statSync(entry.path).isFile()){response.writeHead(404);response.end();return;}
+          if(!["GET","HEAD"].includes(request.method)){response.writeHead(405);response.end();return;}
+          if(request.headers.origin&&request.headers.origin!==rendererOrigin){response.writeHead(403);response.end();return;}
+          response.setHeader("Cache-Control","no-store");
+          streamFile(entry.path,request,response,type);return;
         }
 
         if (pathname.startsWith("/local-music-cover/")) {
@@ -932,13 +956,23 @@ function createTray() {
   }
 }
 
+const mediaShortcuts = [["MediaPlayPause","play-toggle"],["MediaNextTrack","next"],["MediaPreviousTrack","previous"]];
+let lastMediaCommand = "", lastMediaCommandAt = 0;
+function sendMediaCommand(command){
+  const now=Date.now();if(command===lastMediaCommand&&now-lastMediaCommandAt<180)return;
+  lastMediaCommand=command;lastMediaCommandAt=now;sendPlaybackCommand(command);
+}
+function refreshMediaShortcuts(){
+  return Object.fromEntries(mediaShortcuts.map(([key,command])=>{
+    try{return [key,globalShortcut.isRegistered(key)||globalShortcut.register(key,()=>sendMediaCommand(command))];}
+    catch{return [key,false];}
+  }));
+}
 function registerGlobalShortcuts() {
   globalShortcut.unregisterAll();
+  refreshMediaShortcuts();
   const configured = state?.shortcuts || {};
   const shortcuts = [
-    ["MediaPlayPause", "play-toggle"],
-    ["MediaNextTrack", "next"],
-    ["MediaPreviousTrack", "previous"],
     [configured.playPause || "CommandOrControl+Alt+Space", "play-toggle"],
     [configured.next || "CommandOrControl+Alt+Right", "next"],
     [configured.previous || "CommandOrControl+Alt+Left", "previous"],
@@ -1027,6 +1061,11 @@ function createMainWindow() {
       event.preventDefault();
       mainWindow.reload();
     }
+  });
+  mainWindow.on("focus",()=>{refreshMediaShortcuts();sendPlaybackCommand("refresh-media-session");});
+  mainWindow.on("app-command",(event,command)=>{
+    const action={"media-play-pause":"play-toggle","media-nexttrack":"next","media-previoustrack":"previous"}[command];
+    if(action){event.preventDefault();sendMediaCommand(action);}
   });
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -1463,6 +1502,7 @@ function registerIpc() {
   ipcMain.handle("app:set-titlebar-theme", (event, payload = {}) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win) return { ok: false };
+    if(win===mainWindow&&["light","dark","system"].includes(payload.themeSource))nativeTheme.themeSource=payload.themeSource;
     const color = /^#[0-9a-f]{6}$/i.test(payload.color || "") ? payload.color : "#050505";
     const symbolColor = /^#[0-9a-f]{6}$/i.test(payload.symbolColor || "") ? payload.symbolColor : "#f5f5f6";
     if (typeof win.setTitleBarOverlay === "function") {
@@ -1478,13 +1518,54 @@ function registerIpc() {
     active: setExpandedLyricsKeepAwake(Boolean(enabled))
   }));
   ipcMain.handle("session:get", () => state.playbackSession || null);
-  ipcMain.handle("preferences:get", () => ({ ...(state.preferences || {}) }));
+  ipcMain.handle("preferences:get", () => ({ lyricsAutoTranslate:state.preferences?.lyricsAutoTranslate,systemLanguages:app.getPreferredSystemLanguages(),country:app.getLocaleCountryCode(), ...workspacePreferences.read(state) }));
   ipcMain.handle("preferences:set", (_event, payload = {}) => {
     const key = String(payload.key || "");
+    if(key==="workspace") {const result=workspacePreferences.save(state,payload);writeStore(state);return result;}
     if (key !== "lyricsAutoTranslate") throw new Error("Unsupported preference.");
     state.preferences = { ...(state.preferences || {}), [key]: Boolean(payload.value) };
     writeStore(state);
     return { ...state.preferences };
+  });
+  ipcMain.handle("artwork:pick-local",async event=>{
+    if(event.sender!==mainWindow?.webContents||event.senderFrame!==event.sender.mainFrame)throw new Error("Untrusted artwork picker.");
+    const account=workspacePreferences.read(state).workspaceAccount;
+    artworkRevisions.set(account,(artworkRevisions.get(account)||0)+1);
+    const selection=await dialog.showOpenDialog(mainWindow,{title:"Select background",properties:["openFile"],filters:[{name:"Video or image",extensions:["mp4","m4v","webm","mov","jpg","jpeg","png","webp","gif","avif"]}]});
+    if(selection.canceled||!selection.filePaths?.length)return {canceled:true};
+    if(account!==workspacePreferences.read(state).workspaceAccount)throw new Error("Account changed.");
+    const selected=await fs.promises.realpath(selection.filePaths[0]),stat=await fs.promises.stat(selected);
+    if(![".mp4",".m4v",".webm",".mov",".jpg",".jpeg",".png",".webp",".gif",".avif"].includes(path.extname(selected).toLowerCase())||!stat.isFile()||!stat.size)throw new Error("Unsupported background file.");
+    const token=crypto.randomUUID();
+    const previous=state.preferences?.artworkFiles?.[account];
+    state.preferences={...state.preferences,artworkFiles:{...state.preferences?.artworkFiles,[account]:{token,path:selected}}};writeStore(state);
+    await discardManagedArtwork(previous).catch(()=>{});
+    return {url:`/artwork-video/${token}`,name:path.basename(selected)};
+  });
+  ipcMain.handle("artwork:download-youtube",async(event,payload={})=>{
+    if(event.sender!==mainWindow?.webContents||event.senderFrame!==event.sender.mainFrame)throw new Error("Untrusted artwork request.");
+    const account=workspacePreferences.read(state).workspaceAccount,revision=(artworkRevisions.get(account)||0)+1;
+    artworkRevisions.set(account,revision);
+    let progressAt=0;
+    const result=await artworkDownloadCache().download(String(payload.url||""),{onProgress:progress=>{
+      if(Date.now()-progressAt<200&&progress.bytes!==progress.total)return;
+      progressAt=Date.now();
+      if(revision===artworkRevisions.get(account)&&account===workspacePreferences.read(state).workspaceAccount&&!event.sender.isDestroyed())event.sender.send("artwork:download-progress",{requestId:payload.requestId,...progress});
+    }});
+    if(account!==workspacePreferences.read(state).workspaceAccount||revision!==artworkRevisions.get(account))throw new Error("Background selection changed.");
+    const previous=state.preferences?.artworkFiles?.[account],token=crypto.randomUUID();
+    state.preferences={...state.preferences,artworkFiles:{...state.preferences?.artworkFiles,[account]:{token,path:result.path,managed:true}}};writeStore(state);
+    await discardManagedArtwork(previous).catch(()=>{});
+    return {url:`/artwork-video/${token}`,name:result.name,cached:result.cached};
+  });
+  ipcMain.handle("artwork:clear-local",async event=>{
+    if(event.sender!==mainWindow?.webContents||event.senderFrame!==event.sender.mainFrame)throw new Error("Untrusted artwork request.");
+    const account=workspacePreferences.read(state).workspaceAccount;
+    artworkRevisions.set(account,(artworkRevisions.get(account)||0)+1);
+    const previous=state.preferences?.artworkFiles?.[account];
+    if(state.preferences?.artworkFiles){delete state.preferences.artworkFiles[account];writeStore(state);}
+    await discardManagedArtwork(previous).catch(()=>{});
+    return {cleared:true};
   });
   ipcMain.handle("session:save", (_event, payload = {}) => savePlaybackSession(payload));
   ipcMain.on("session:save-sync", (event, payload = {}) => {
@@ -1684,6 +1765,10 @@ function registerIpc() {
     return { tracks: state.localMusicLibrary, folders: state.localMusicFolders, activeFolder: resolved };
   });
   ipcMain.handle("shortcuts:get", () => state.shortcuts || {});
+  ipcMain.handle("media:refresh",event=>{
+    if(event.sender!==mainWindow?.webContents||event.senderFrame!==event.sender.mainFrame)throw new Error("Untrusted media request.");
+    return refreshMediaShortcuts();
+  });
   ipcMain.handle("shortcuts:set", (_event, shortcuts = {}) => {
     state.shortcuts = {
       playPause: String(shortcuts.playPause || ""),
@@ -1695,7 +1780,7 @@ function registerIpc() {
     registerGlobalShortcuts();
     return state.shortcuts;
   });
-  ipcMain.handle("update:status", () => ({ packaged: app.isPackaged, version: app.getVersion(), repository: state.updateRepository || DEFAULT_UPDATE_REPOSITORY }));
+  ipcMain.handle("update:status", () => ({ packaged: app.isPackaged, version: app.getVersion(), repository: state.updateRepository || DEFAULT_UPDATE_REPOSITORY,availableRelease }));
   ipcMain.handle("update:check", async (_event, repository) => {
     const normalized = configureUpdater(repository || state.updateRepository || DEFAULT_UPDATE_REPOSITORY);
     state.updateRepository = normalized;
@@ -1788,8 +1873,8 @@ function registerIpc() {
   ipcMain.handle("lyrics:find", async (_event, payload = {}) => {
     const track = payload?.track || payload;
     const options = payload?.options || {};
+    const provider = String(options.provider || "auto");
     try {
-      const provider = String(options.provider || "auto");
       const canonicalLookupPromise = canonicalLyricsLookup(track, options);
       const loadTranscript = async () => {
         if (!track?.id && !track?.videoId) {
@@ -1800,12 +1885,13 @@ function registerIpc() {
       };
 
       if (provider === "youtube-transcript") {
+        if (options.includeYouTube === false || Array.isArray(options.providers) && !options.providers.includes("youtube-transcript")) return lyricsFromTranscriptResponse(null, track);
         return await loadTranscript();
       }
 
       const lookup = await canonicalLookupPromise;
       const result = await findLyrics(lookup.track, lookup.options);
-      if (provider === "auto" && (!result?.found || !result.lines?.length)) {
+      if (provider === "auto" && options.includeYouTube !== false && (!Array.isArray(options.providers) || options.providers.includes("youtube-transcript")) && (!result?.found || !result.lines?.length)) {
         try {
           const transcript = await loadTranscript();
           if (transcript?.found && transcript.lines?.length) {
@@ -2051,7 +2137,8 @@ function registerIpc() {
   });
 
   ipcMain.handle("lyric:update", (_event, payload) => {
-    lastLyricPayload = payload;
+    if(payload?.clockOnly){if(payload.trackId!==lastLyricPayload?.trackId)return;lastLyricPayload={...lastLyricPayload,...payload,clockOnly:false};}
+    else lastLyricPayload = payload;
     if (lyricWindow && !lyricWindow.isDestroyed()) {
       lyricWindow.webContents.send("lyric:changed", payload);
     }
@@ -2145,6 +2232,8 @@ app.whenReady().then(async () => {
 
   console.log("[boot] step 8/10: creating main window");
   createMainWindow();
+  featureHost = await registerFeatures({ ipcMain, mainWindow: () => mainWindow, youtube: () => youtube,
+    app, safeStorage, localTranslation, getState: () => state, setState: (value) => { state = value; writeStore(state); } });
   app.on("second-instance", () => {
     showMainWindow();
   });
@@ -2178,6 +2267,7 @@ app.whenReady().then(async () => {
 
 app.on("will-quit", async (event) => {
   isQuitting = true;
+  await featureHost?.dispose();
   setExpandedLyricsKeepAwake(false);
   closeAuxiliaryWindows();
   localTranslation.close();

@@ -1,0 +1,44 @@
+.lyrics-card-dialog {
+  width: min(1080px, calc(100vw - 40px)); max-height: calc(100dvh - 64px);
+  padding: 22px; border: 1px solid #ffffff26; border-radius: 8px;
+  background: #202124; color: #f4f4f5; box-shadow: 0 22px 70px #0006;
+}
+.lyrics-card-dialog::backdrop { background: #0008; }
+.lyrics-card-dialog * { box-sizing: border-box; }
+.lyrics-card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.lyrics-card-header h2 { margin: 0; font-size: 22px; }
+.lyrics-card-dialog .lyrics-card-close { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; flex: none; font-size: 26px; line-height: 1; }
+.lyrics-card-body { display: grid; grid-template-columns: minmax(250px, 340px) minmax(0, 1fr); gap: 24px; }
+.lyrics-card-controls { min-width: 0; }
+.lyrics-card-layouts { border: 0; margin: 0 0 18px; padding: 0; display: flex; gap: 6px; }
+.lyrics-card-layouts legend { margin-bottom: 8px; }
+.lyrics-card-dialog button { min-height: 36px; border: 1px solid #ffffff26; background: #ffffff0d; color: inherit; border-radius: 8px; padding: 7px 12px; cursor: pointer; box-shadow: none; }
+.lyrics-card-dialog button:hover { background: #ffffff1c; }
+.lyrics-card-dialog button[aria-pressed="true"] { border-color: rgb(var(--theme-color)); background: rgba(var(--theme-color), .2); }
+.lyrics-card-dialog button:disabled { opacity: .45; cursor: default; }
+.lyrics-card-dialog :focus-visible { outline: 2px solid rgb(var(--theme-color)); outline-offset: 2px; }
+.lyrics-card-colors { display: flex; gap: 24px; margin-bottom: 18px; }
+.lyrics-card-colors label { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.lyrics-card-colors input { width: 36px; height: 32px; padding: 2px; border: 1px solid #8886; border-radius: 6px; background: transparent; }
+.lyrics-card-controls h3 { margin: 0 0 4px; font-size: 16px; }
+.lyrics-card-controls small { opacity: .7; }
+.lyrics-card-lines { overflow: auto; max-height: min(37dvh, 340px); margin-top: 12px; border-top: 1px solid #8884; }
+.lyrics-card-lines label { display: flex; gap: 10px; align-items: flex-start; padding: 10px 6px; border-bottom: 1px solid #8883; cursor: pointer; font-size: 14px; }
+.lyrics-card-lines input { flex: none; margin: 3px 0 0; accent-color: rgb(var(--theme-color)); }
+.lyrics-card-lines span { overflow-wrap: anywhere; line-height: 1.5; }
+.lyrics-card-preview { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 330px; padding: 16px; background: #0002; border-radius: 8px; }
+.lyrics-card-preview canvas { display: block; width: auto; height: auto; max-width: 100%; max-height: min(53dvh, 540px); object-fit: contain; border-radius: 4px; }
+.lyrics-card-status { min-height: 22px; font-size: 14px; margin: 14px 0 8px; }
+.lyrics-card-footer { display: flex; justify-content: flex-end; gap: 10px; }
+.lyrics-card-footer button.primary { background: rgb(var(--theme-color)); color: var(--theme-on-color, #fff); }
+html[data-color-scheme="light"] .lyrics-card-dialog, body.light-theme .lyrics-card-dialog, html[data-theme-mode="light"] .lyrics-card-dialog { background: #fafafd; color: #202124; border-color: #1d233326; }
+html[data-color-scheme="light"] .lyrics-card-dialog button { border-color: #1d233326; background: #1d233308; }
+html[data-color-scheme="light"] .lyrics-card-dialog button[aria-pressed="true"] { border-color: rgb(var(--theme-color)); background: rgba(var(--theme-color), .16); }
+html[data-color-scheme="light"] .lyrics-card-dialog .lyrics-card-footer button.primary { background: rgb(var(--theme-color)); color: var(--theme-on-color, #fff); }
+@media (max-width: 720px) {
+  .lyrics-card-dialog { padding: 16px; }
+  .lyrics-card-body { grid-template-columns: 1fr; gap: 16px; }
+  .lyrics-card-preview { min-height: 180px; }
+  .lyrics-card-preview canvas { max-height: 30dvh; }
+  .lyrics-card-lines { max-height: 22dvh; }
+}

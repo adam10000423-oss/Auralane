@@ -1,0 +1,7 @@
+#lyricsPane .lyric-line {
+  transition:opacity 480ms cubic-bezier(.22,.72,.16,1),color 320ms ease;
+  will-change:auto;
+}
+html.apt-reduced-motion #lyricsPane .lyric-line,
+html.apt-low-power #lyricsPane .lyric-line { transition:none; }
+@media(prefers-reduced-motion:reduce){#lyricsPane .lyric-line{transition:none;}}

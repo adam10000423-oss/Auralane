@@ -1,0 +1,23 @@
+.feature-host { grid-column: 1 / -1; min-width: 0; width: 100%; font-size: 13px; letter-spacing: 0; }
+.feature-host > details { border-top: 1px solid var(--border, #8885); }
+.feature-host summary { cursor: pointer; padding: 12px 4px; font-weight: 600; }
+.feature-host-body { padding: 4px 4px 16px; min-width: 0; }
+.feature-host h2 { font-size: 16px; line-height: 1.4; margin: 8px 0; }
+.feature-host h3 { font-size: 14px; line-height: 1.4; }
+.feature-host label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-block: 8px; min-width: 0; }
+.feature-host :is(input:not([type=checkbox]):not([type=range]), select) { max-width: 100%; min-width: 0; box-sizing: border-box; }
+.feature-host :is(button, input, select) { font: inherit; }
+.feature-host button { min-height: 32px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; margin: 3px; border-radius: 6px; }
+.feature-host :is(p, output, span, strong, summary) { overflow-wrap: anywhere; }
+.feature-host output { display: block; user-select: text; }
+.feature-host :is(fieldset, section, form) { min-width: 0; }
+.feature-host fieldset { margin: 12px 0; border: 1px solid var(--border, #8885); border-radius: 6px; }
+.feature-host-status:empty { display: none; }
+.feature-host-status { color: var(--text-secondary, inherit); }
+.feature-host-queue { padding: 8px 0; }
+.feature-host-queue .together-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.feature-host-queue .together-controls input { width: 100%; }
+.feature-host-review { border-top: 1px solid var(--border, #8885); padding-block: 8px; }
+.feature-host-review ul { padding-left: 0; list-style: none; max-height: 280px; overflow-y: auto; }
+.feature-host-versions .source-tools > :not(.st-versions) { display: none; }
+.feature-host [hidden] { display: none !important; }

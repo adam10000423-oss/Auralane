@@ -696,7 +696,8 @@ function browseItemFromNavigationButton(renderer) {
     type: typeFromBrowseEndpoint(endpoint),
     title: textFromRuns(renderer.buttonText?.runs) || textFromRuns(renderer.text?.runs) || "Browse",
     subtitle: "YouTube Music",
-    thumbnail: ""
+    thumbnail: renderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.at(-1)?.url || renderer.thumbnail?.thumbnails?.at(-1)?.url || "",
+    stripeColor: renderer.solid?.leftStripeColor || renderer.defaultBackgroundColor || null
   };
 }
 
@@ -1295,6 +1296,12 @@ function chooseAudioFormat(response, quality = "auto", options = {}) {
   return audio[0];
 }
 
+function chooseBackgroundVideoFormat(response) {
+  const formats = [...(response?.streamingData?.adaptiveFormats || []), ...(response?.streamingData?.formats || [])]
+    .filter(format => format.url && /^video\/(mp4|webm)\b/.test(format.mimeType || "") && Number(format.height || 0) <= 720);
+  return formats.sort((a,b) => Number(/^video\/mp4/.test(b.mimeType)) - Number(/^video\/mp4/.test(a.mimeType)) || Number(b.height || 0) - Number(a.height || 0) || Number(a.bitrate || 0) - Number(b.bitrate || 0))[0] || null;
+}
+
 function streamingSummary(response) {
   const formats = response?.streamingData?.adaptiveFormats || [];
   const audio = formats.filter((format) => String(format.mimeType || "").startsWith("audio/"));
@@ -1469,7 +1476,8 @@ class InnerTubeClient {
   }
 
   async explore() {
-    return this.browse("FEmusic_explore", null, true);
+    const result = await this.moods();
+    return { ...result, header: { ...result.header, title: "Explore" } };
   }
 
   async charts() {
@@ -1481,7 +1489,15 @@ class InnerTubeClient {
   }
 
   async moods() {
-    return this.browse("FEmusic_moods_and_genres", null, true);
+    const response=await this.request("browse",{browseId:"FEmusic_moods_and_genres"},{login:true});
+    const contents=response.contents?.singleColumnBrowseResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents||[];
+    const groups=contents.map(section=>section.gridRenderer).filter(Boolean).map(grid=>({title:textFromObject(grid.header?.gridHeaderRenderer?.title),items:(grid.items||[]).map(item=>browseItemFromNavigationButton(item.musicNavigationButtonRenderer)).filter(Boolean)}));
+    const key=item=>`${item.browseId}:${item.params||""}`;
+    const items=groups.flatMap((group,index)=>{
+      const later=new Set(groups.slice(index+1).flatMap(other=>other.items.map(key)));
+      return group.title?.toLowerCase()==="for you"||group.items.some(item=>later.has(key(item)))?[]:group.items;
+    });
+    return models.normalizePageResult({header:{title:"Moods and genres",type:"browse",browseId:"FEmusic_moods_and_genres"},items:dedupeBrowseItems(groups.length?items:extractBrowseItems(response)),tracks:[],sections:[],continuations:[]});
   }
 
   async browseContinuation(token, login = true) {
@@ -1995,7 +2011,7 @@ class InnerTubeClient {
           ...summary
         });
 
-        const format = chooseAudioFormat(response, quality, options);
+        const format = options.videoOnly ? chooseBackgroundVideoFormat(response) : chooseAudioFormat(response, quality, options);
         if (!format) continue;
 
         const availableAudioFormats = (response?.streamingData?.adaptiveFormats || [])
@@ -2042,7 +2058,7 @@ class InnerTubeClient {
 
     return {
       mode: "webview",
-      reason: "No direct audio URL was returned by the supported clients.",
+      reason: options.videoOnly ? "No downloadable background video was returned by the supported clients." : "No direct audio URL was returned by the supported clients.",
       attempts,
       details
     };

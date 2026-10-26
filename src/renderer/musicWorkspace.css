@@ -1,0 +1,119 @@
+.workspace-dialog { width: min(760px, calc(100vw - 40px)); max-height: calc(100vh - 72px); margin: auto; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--ink); overflow: hidden; }
+.workspace-dialog::backdrop { background: #0009; }
+.workspace-dialog > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+.workspace-dialog > header h2 { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
+.workspace-dialog-body { padding: 20px 24px; max-height: calc(100vh - 170px); overflow-y: auto; overscroll-behavior: contain; }
+.workspace-dialog [hidden] { display: none !important; }
+.workspace-icon { width: 36px; height: 36px; min-width: 36px; flex: 0 0 36px; display: inline-grid; place-items: center; border-radius: 8px; }
+.workspace-icon svg { width: 19px; height: 19px; }
+.workspace-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.automix-status { position: absolute; bottom: 6px; left: 16px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; pointer-events: none; }
+.automix-status[hidden] { display: none; }
+.workspace-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.workspace-field > span { font-size: 13px; color: var(--muted); }
+.workspace-dialog :is(input, select, button) { font: inherit; max-width: 100%; }
+.workspace-dialog button { border: 1px solid var(--line); background: var(--button); color: var(--ink); box-shadow: none; cursor: pointer; border-radius: 6px; }
+.workspace-dialog button:not(.workspace-icon) { min-height: 38px; padding: 8px 14px; }
+.workspace-dialog button.primary-action { background: var(--surface-3); border-color: var(--accent); color: var(--ink); box-shadow: none; }
+.workspace-dialog button:hover:not(:disabled) { background: var(--button-hover); }
+.workspace-dialog button:disabled { opacity: .4; cursor: default; }
+.workspace-dialog :is(input, select), .workspace-replay input { min-width: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.workspace-rule-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.workspace-conditions { display: grid; gap: 10px; margin-bottom: 20px; }
+.workspace-condition { display: flex; align-items: center; gap: 8px; }
+.workspace-condition > :not(button) { min-width: 0; flex: 1; }
+.workspace-song-list { list-style: none; margin: 16px 0; padding: 0; }
+.workspace-song-list li { display: flex; align-items: center; gap: 12px; min-height: 64px; border-bottom: 1px solid var(--line-soft); }
+.workspace-song-list img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+.workspace-song-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.workspace-song-copy :is(strong,small) { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.workspace-song-copy small, .workspace-metric, .workspace-rank { color: var(--muted); font-size: 12px; }
+.workspace-rank { min-width: 22px; text-align: center; }
+.workspace-metric { white-space: nowrap; }
+.workspace-song-list .workspace-icon { background: var(--accent); color: #fff; border: 0; box-shadow: none; }
+.workspace-smart { margin-block: 24px 32px; }
+.workspace-smart h2 { font-size: 20px; margin: 0; }
+.workspace-playlist-card { display: flex; flex-direction: column; align-items: stretch; gap: 8px; text-align: left; min-width: 0; padding: 0; border: 0; background: none; color: var(--ink); }
+.workspace-playlist-card > img, .workspace-playlist-placeholder { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; background: var(--surface-3); }
+.workspace-playlist-placeholder { display: grid; place-items: center; color: var(--accent); }
+.workspace-playlist-placeholder svg { width: 40px; height: 40px; }
+.workspace-playlist-card strong { overflow-wrap: anywhere; }
+.workspace-playlist-card small { color: var(--muted); }
+.workspace-replay-heading { flex-wrap: wrap; align-items: center; gap: 16px; }
+.workspace-replay-heading h1 { font-size: 30px; margin: 6px 0 0; }
+.workspace-replay { min-width: 0; }
+.workspace-replay .status { white-space: normal; overflow-wrap: anywhere; }
+.replay-options { position:relative; }
+.replay-options > summary { list-style:none; cursor:pointer; padding:8px 12px; border-radius:8px; border:1px solid var(--line); }
+.replay-options[open] { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.replay-options > input, .replay-options > select { max-width:180px; }
+.workspace-replay-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); margin-block: 24px 12px; padding-block: 22px; gap: 16px; }
+.workspace-replay-metrics > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.workspace-replay-metrics small { color: var(--muted); }
+.workspace-replay-metrics strong { font-size: 26px; }
+.workspace-listening-chart { height: 100px; display: flex; align-items: flex-end; gap: 3px; margin-block: 24px; border-bottom: 1px solid var(--line); }
+.workspace-listening-chart:empty { display: none; }
+.workspace-chart-bar { flex: 1; max-width: 32px; min-width: 1px; height: var(--bar-height); background: var(--accent); border-radius: 3px 3px 0 0; opacity: .8; }
+.workspace-replay-columns { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 32px; }
+.workspace-replay-columns > section { min-width: 0; }
+.workspace-replay-columns h2 { font-size: 20px; }
+.workspace-artist-list { list-style: none; padding: 0; }
+.workspace-artist-list li { display: flex; justify-content: space-between; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line-soft); }
+.workspace-artist-list strong { overflow-wrap: anywhere; }
+.workspace-integrated-settings { display: contents; }
+.workspace-integrated-settings .source-tools > h2, .workspace-integrated-settings .integration-tools > h2 { display: none; }
+.workspace-dialog.feature-host .auralane-listening-tools { border: 0; padding: 0; background: none; }
+.workspace-dialog.feature-host .alt-heading { display: none; }
+.workspace-dialog.feature-host > .workspace-dialog-body { padding: 20px 24px; }
+.settings-card.auralane-performance-tools { border-block: none; }
+.settings-card > .auralane-performance-tools { border: 0; padding: 0; background: none; }
+.workspace-integrated-settings .feature-host-body { padding-inline: 0; }
+.workspace-integrated-settings > .settings-card > summary { font-size: 18px; }
+.workspace-service { border-block-start: 1px solid var(--line); padding-block: 12px; }
+.workspace-service summary { display: flex; justify-content: space-between; gap: 12px; cursor: pointer; }
+.workspace-service-status { font-size: 12px; color: var(--muted); }
+.workspace-service > form, .workspace-service > a { margin-top: 16px; }
+.workspace-settings-tabs { display: flex; flex-direction: column; gap: 4px; align-self: start; }
+#settingsView .settings-grid [data-workspace-category][hidden] { display: none !important; }
+.workspace-settings-tabs button { padding: 12px 14px; border-radius: 8px; }
+.workspace-settings-tabs button[aria-pressed=true] { background: var(--surface-3); color: var(--ink); border-color: var(--accent); }
+.workspace-appearance-field { margin-block: 14px; }
+/* Single stationary glass layers; no filters on scrolling rows or lyric words. */
+body[data-material=glass] { --glass-fill: rgb(26 28 32 / 38%); --glass-rim: rgb(255 255 255 / 27%); --glass-shadow: inset 0 1px 0 rgb(255 255 255 / 35%), inset 0 -1px 0 rgb(255 255 255 / 7%), 0 8px 28px rgb(0 0 0 / 22%); }
+body[data-material=glass]:not(.apt-low-power):not([data-reduce-transparency=true]) :is(.player, .topbar, .workspace-dialog, .more-menu, .side-tabs) {
+  background: linear-gradient(155deg, rgb(255 255 255 / 13%), rgb(255 255 255 / 2%) 44%), var(--glass-fill);
+  backdrop-filter: blur(22px) saturate(1.55); -webkit-backdrop-filter: blur(22px) saturate(1.55);
+  border: 1px solid var(--glass-rim); box-shadow: var(--glass-shadow);
+}
+body[data-material=glass] :is(.sidebar, .queue-panel) { background: rgb(24 26 30 / 58%); }
+body[data-material=glass] .sidebar { backdrop-filter: none; -webkit-backdrop-filter: none; }
+body[data-material=glass] .topbar { border-radius: 24px; }
+body[data-material=glass] .player { left: 10px; right: 10px; bottom: 8px; border-radius: 26px; }
+body[data-material=glass] :is(.workspace-dialog, .more-menu) { border-radius: 24px; }
+body[data-material=glass] .side-tabs { border-radius: 18px; padding: 5px; }
+body[data-material=glass] .side-tab { border-radius: 13px; box-shadow: none; }
+body[data-material=glass] .side-tab.active { background: rgb(255 255 255 / 16%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 28%), 0 2px 6px #0002; }
+body[data-material=glass] :is(.settings-card, .settings-category-nav) { background: rgb(255 255 255 / 4%); border-color: rgb(255 255 255 / 15%); border-radius: 22px; box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%); }
+body[data-material=glass] :is(.settings-card, .topbar) :is(input:not([type=checkbox]):not([type=range]), select, button:not(.play):not(.icon-button)) { border-radius: 14px; }
+body[data-material=glass] .sidebar .nav { border-radius: 14px; }
+body[data-material=glass] .sidebar .nav.active { background: rgb(255 255 255 / 10%); border-color: rgb(255 255 255 / 22%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%); }
+body[data-material=glass] :is(.topbar, .workspace-dialog, .workspace-spotify) .workspace-icon { border-radius: 12px; background: rgb(255 255 255 / 8%); border: 1px solid rgb(255 255 255 / 18%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 15%); }
+body[data-material=glass] :is(.topbar, .workspace-dialog, .workspace-spotify) .workspace-icon:hover:not(:disabled) { background: rgb(255 255 255 / 17%); }
+body[data-material=glass][data-reduce-transparency=true] :is(.player,.topbar,.workspace-dialog,.more-menu,.side-tabs) { background: var(--surface-2); backdrop-filter: none; -webkit-backdrop-filter: none; }
+body[data-material=glass][data-reduce-transparency=true] :is(.settings-card,.settings-category-nav,.sidebar,.queue-panel) { background: var(--surface-2); }
+body.apt-low-power :is(.player,.topbar,.workspace-dialog,.more-menu,.side-tabs), body.workspace-dragging :is(.player,.topbar,.workspace-dialog,.more-menu,.side-tabs) { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: var(--surface-2) !important; }
+.workspace-spotify { min-width: 0; }
+.workspace-spotify h1 { overflow-wrap: anywhere; }
+.workspace-spotify .status { white-space: normal; overflow-wrap: anywhere; }
+.spotify-playlists { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 24px 18px; margin-block: 24px; }
+.spotify-playlists .workspace-playlist-card { cursor: pointer; }
+.spotify-playlists .workspace-playlist-card:disabled { opacity: .55; cursor: default; }
+.spotify-playlist-heading { display: flex; align-items: center; gap: 16px; padding-block: 20px; border-bottom: 1px solid var(--line); }
+.spotify-playlist-heading > img, .spotify-playlist-heading > .workspace-playlist-placeholder { width: 90px; height: 90px; flex: 0 0 90px; object-fit: cover; border-radius: 8px; }
+.spotify-playlist-heading > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.workspace-spotify .workspace-song-list > li > .workspace-playlist-placeholder { width: 40px; height: 40px; flex: 0 0 40px; }
+.spotify-more { margin-block: 16px; }
+@media (max-width: 850px) { .workspace-replay-columns { grid-template-columns: minmax(0,1fr); gap: 16px; } }
+@media (max-width: 850px) { .workspace-settings-tabs { flex-direction: row; flex-wrap: wrap; } }
+@media (max-width: 480px) { .workspace-dialog-body { padding: 16px; } .workspace-rule-settings { grid-template-columns: minmax(0,1fr); } .workspace-condition { flex-wrap: wrap; } .workspace-condition > select:first-child { flex-basis: 100%; } .workspace-metric { display: none; } .workspace-replay-metrics strong { font-size: 21px; } }
+@media (prefers-reduced-transparency: reduce) { body[data-material=glass] :is(.player,.topbar,.workspace-dialog,.more-menu,.side-tabs) { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: var(--surface-2) !important; } }

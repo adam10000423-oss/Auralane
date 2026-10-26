@@ -1,8 +1,24 @@
+<p align="center">
+  <img src="src/assets/auralane-icon.png" alt="Auralane icon" width="112" height="112">
+</p>
+
 # Auralane
 
 Auralane is a desktop music player for YouTube Music, built with Electron. It combines discovery, queue management, local music, offline playback, synchronized lyrics, translation, desktop lyrics, and compact player experiences in one focused interface.
 
 > Auralane is an independent, unofficial client. It is not affiliated with or endorsed by Google or YouTube.
+
+## What's new in 1.1.0
+
+- **Make the player yours:** Liquid Glass or Standard, light/dark/system appearance, adjustable transparency, and your own image or locally cached video background.
+- **Continuous karaoke:** smooth word-level color fill in both Session and full-screen lyrics, custom lyric colors, intro cues, improved backing-vocal presentation and less repaint work during playback.
+- **Share the moment:** a live lyric-card editor with selectable lines, three layouts, background/text colors, PNG clipboard copy and download.
+- **Keep listening:** rule-based smart playlists, ten replenishing queue recommendations, two-track Crossfade/Automix and a dedicated Replay page.
+- **Bring your library:** a Spotify sidebar with persistent single-account sign-in, playlist/liked-song metadata and on-demand YouTube Music matching.
+- **Listen Together:** public relay rooms with host-controlled permissions for playback, seeking, adding, reordering and removing songs.
+- **Smaller base download:** the optional Windows offline-translation pack is downloaded, verified and removable from Settings instead of bundled into the installer.
+
+See the [detailed 1.1.0 release notes](.github/release-notes/v1.1.0.md) for changes, download choices and limitations.
 
 ## Download
 
@@ -32,41 +48,39 @@ On Windows, open **Settings > System > About > System type**. The current Window
 
 Unsigned macOS builds may require using **Open** from Finder's context menu on first launch. Release files and checksums are published on the [latest release page](https://github.com/adam10000423-oss/Auralane/releases/latest).
 
-## Interface
+## Screenshots
 
-### Search and synchronized lyrics
+Captured in the running Electron app using live Counting Stars search/lyrics results. Account names and avatars are anonymized. The rain-window video is a user-selected background, not a bundled asset or a hosted video supplied by Auralane.
 
-![Search results for Without You with synchronized lyrics](docs/screenshots/01-search-without-you.png)
+### Dark Liquid Glass and a custom video background
 
-### Home and personal discovery
+Clear media in the main area, translucent controls and song rows, a resizable Session panel, and the compact glass transport.
 
-![Auralane home](docs/screenshots/02-home.png)
+![Dark Liquid Glass with a custom rain-window video and Counting Stars](docs/screenshots/10-liquid-glass-background.png)
 
-### Library
+### Immersive lyrics with the same background
 
-![Auralane library](docs/screenshots/03-library.png)
+Select Song, Theme, Plain or Custom in the expanded lyrics display controls. Custom retains the configured image/video; changing this selection does not remove your main-window background.
 
-### Full-screen lyrics
+![Full-screen Counting Stars lyrics with the custom video background](docs/screenshots/11-focus-custom-background.png)
 
-Full-screen lyrics support word-by-word highlighting, translated lines, per-track timing adjustment, source switching, display controls, and artwork-reactive colors.
+### Live lyric-card editor
 
-![Word-synchronized Counting Stars lyrics with Traditional Chinese translation](docs/screenshots/08-counting-stars-focus-lyrics.png)
+Choose up to eight lines, Quote/Square/Poster layout, background and text color. Preview the exported composition before copying the PNG or downloading it.
 
-### Artist pages and Session lyrics
+![Anonymous lyric-card editor and live preview](docs/screenshots/12-lyric-card-editor.png)
 
-Artist profiles combine biography, popular songs, radio, follow controls, and direct playback. The resizable Session panel keeps Queue and Lyrics available beside the current page.
+### Standard light appearance
 
-![OneRepublic artist page with Counting Stars and Session lyrics](docs/screenshots/09-counting-stars-artist-session.png)
+Standard keeps the traditional player layout instead of the compact glass bar. Appearance and accent color are independent choices.
 
-### Compact desktop playback
+![Standard light appearance](docs/screenshots/13-standard-light.png)
 
-| Mini player | Desktop lyrics |
-| --- | --- |
-| ![Auralane mini player](docs/screenshots/06-mini-player.png) | ![Auralane floating desktop lyrics](docs/screenshots/07-desktop-lyrics.png) |
+### Appearance settings
 
-### GitHub updates
+Switch material, adjust component transparency, choose light/dark/system appearance, and configure a local image, video or cached YouTube background.
 
-![Built-in GitHub update settings](docs/screenshots/04-settings-updates.png)
+![Liquid Glass transparency and custom background settings](docs/screenshots/14-settings-appearance.png)
 
 ## Features
 
@@ -84,20 +98,24 @@ Artist profiles combine biography, popular songs, radio, follow controls, and di
 - Configurable audio equalizer and output-device switching.
 - Media keys, system tray controls, global shortcuts, notifications, and a sleep timer.
 - Theme colors can follow the current song artwork.
+- Ten clearly separated recommendations are prepared for a new queue and replenished as tracks are consumed or removed; moving one into the main queue promotes it to a normal queue entry.
+- Transition modes: Off, equal-power two-track Crossfade, and conservative beat-aligned Automix. Unsupported or uncertain analysis falls back to Crossfade rather than blocking playback.
 
 ### Lyrics
 
 - Plain, line-synchronized, and word-synchronized karaoke lyrics.
-- Lyrics sources include NetEase Music, Musixmatch, BetterLyrics, LRCLIB, KuGou, Paxsenix, LyricsPlus, Lyrics.ovh, and YouTube transcripts.
+- Lyrics adapters include NetEase Music, Musixmatch, BetterLyrics, LRCLIB, KuGou, Paxsenix, LyricsPlus, Lyrics.ovh, YouTube transcripts, lrc.red, BiniLyrics, Unison, Betterlyrics Portato and Genius. Availability and timing precision vary by provider and recording.
 - Search enabled providers in parallel, compare versions, preview results, and remember the selected source per song.
 - Per-song timing offset with `-500 ms`, `+500 ms`, and reset controls.
 - Timeline editing and tap timing for correcting synchronized lyrics.
 - Fast translation with cached results, romanization, editable translated lines, and configurable target language.
-- Word-level karaoke coloring follows the exact active word when timing data is available.
+- Continuous color wipe follows actual provider word/syllable timing in both Session and full-screen views; line-only lyrics are not assigned fabricated word timings.
+- First verified word-timed result wins when no source is saved; otherwise the saved selection is restored without later results replacing it. If no word-timed result arrives, completed search falls back to synced/plain text.
+- Next-track lyric prefetch, source switching with Up/Down, clickable intro waiting cues, backing-vocal intervals, whole-word wrapping and custom colors for singing/sung/upcoming/translated lines.
 - Full-screen focus lyrics with song artwork, alignment and display controls, source selection, and auto-follow.
 - Session lyrics remain scrollable and can return to the current line with the Sync control.
 - Always-on-top desktop lyrics stay synchronized when the main window is minimized or hidden.
-- Share selected lyrics as a generated image card.
+- Share selected lyrics in a modal card editor with live preview, three layouts, color controls, image clipboard copy and PNG download.
 - Lyrics keep following playback even when the Session panel is hidden.
 
 ### Library, playlists, and offline use
@@ -111,6 +129,18 @@ Artist profiles combine biography, popular songs, radio, follow controls, and di
 - Offline cache, configurable cache size, and offline-only playback.
 - Local music folder scanning, metadata and cover extraction, filtering, sorting, playback, and full-library reset.
 - Smart playlists, listening history, backup import/export, and layout restore.
+- Smart playlists support all/any rules, artist, known like/download state, play counts, recent listening, duration, ordering and result limits.
+- Replay has its own sidebar entry: browse available YouTube Music account history or real on-device listening records. Local week/month/year summaries cannot reconstruct listening that was never recorded.
+- Spotify has its own sidebar, persistent single-account login, refresh/disconnect, paged playlists and liked-song metadata. Matching happens per song as needed; unmatched tracks are marked and skipped. Audio is played through YouTube Music, not Spotify's DRM stream.
+
+### Listen Together
+
+- Create or join a relay-backed room across supported devices and networks; the default public relay is configured in the app.
+- Synchronize queue and playback while each participant resolves their own audio stream.
+- Hosts separately control play/pause, skip/select, seeking, adding songs, reordering and removing songs; guests cannot replace an entire room snapshot or change host permissions.
+- Append-only is the default guest permission; changes are validated by the relay, not just disabled in the interface.
+- Personal volume, output selection and lyric display remain local. The relay does not host or redistribute audio.
+- The free public relay may need time to wake, and restarting it ends in-memory rooms. [Self-hosting instructions](docs/online-together-deployment.md) are available.
 
 ### Desktop experience
 
@@ -120,11 +150,14 @@ Artist profiles combine biography, popular songs, radio, follow controls, and di
 - Always-on-top desktop lyrics with synchronized translation, word timing, adjustable opacity, and font selection.
 - Full-screen listening mode with artwork-reactive visuals and uncluttered transport controls.
 - Multiple density options and a theme that can automatically follow the current song artwork.
-- English, Traditional Chinese, Simplified Chinese, Japanese, and Korean interface languages.
+- Searchable native-name language pickers and device-language defaults. English, Traditional/Simplified Chinese, Japanese and Korean have bundled UI dictionaries; additional languages use on-demand translation and may fall back to English. Original song metadata and lyrics are not rewritten to match the UI language.
 - Save up to eight accounts on one device, switch from the top bar at any time, and keep every session protected by the operating system's encrypted storage.
 - Account switches also isolate YouTube Music web playback, likes, library data, playlists, history, and cached playback URLs.
 - Automatic GitHub Release checks on every packaged-app launch, with a Settings red dot and a dismissible sidebar notice when Settings is outside the visible scroll area.
 - The installed Windows build downloads, installs, and reopens a new version after one click on **Update now**.
+- Startup release announcement with version and release notes, linking directly to GitHub Update settings.
+- Light, Dark and Follow system schemes; independent artwork-following accents, readable color limits and optional custom lyric colors.
+- Liquid Glass transparency also applies to song rows and Settings. Low-power, reduced-motion and reduced-transparency options provide less expensive fallbacks.
 
 ## Run from source
 
@@ -140,7 +173,7 @@ npm install
 npm start
 ```
 
-The bundled local translation runtime and language models are optional release components and are not stored in Git because of their size. Source builds automatically use available online translation providers when the local runtime is absent.
+The offline translation runtime and models are **not bundled**. On Windows x64, Settings can download the separately published, checksum-verified optional pack and delete it later. It is approximately 808 MB to download and needs additional extracted disk space. Online translation remains available without it; speed depends on the provider, cache and network, not a guaranteed two-second deadline. Other platforms currently use online translation.
 
 ## Build packages
 
@@ -152,7 +185,7 @@ npm run dist
 
 Build output is written to `dist/`. Windows produces an NSIS installer and a portable executable. macOS packages are built on macOS runners for both Intel and Apple silicon.
 
-Creating a tag such as `v1.0.4` triggers the GitHub Actions release workflow, publishes separate Windows, Intel Mac, and Apple silicon packages, and uploads the metadata required by `electron-updater`.
+Creating a tag such as `v1.1.0` triggers the GitHub Actions release workflow, publishes separate Windows, Intel Mac, and Apple silicon packages, SHA-256 checksums, and update metadata. Intel/Apple silicon metadata is merged before publishing so one architecture cannot overwrite the other.
 
 ## Privacy and security
 
@@ -160,7 +193,7 @@ Creating a tag such as `v1.0.4` triggers the GitHub Actions release workflow, pu
 - Embedded web playback is restricted to `music.youtube.com`.
 - External navigation is limited to HTTPS and opens outside the app.
 - Session cookies use Electron `safeStorage`; Auralane does not persist them when secure OS storage is unavailable.
-- Account data, queues, downloads, local file paths, lyrics caches, and playback history remain on the local device.
+- Local libraries, caches, downloads and listening records are stored on the device. Using online providers sends the relevant song/query data to those services. Opting into Listen Together shares room display names, queue metadata and playback state through the selected relay; private credentials and local file paths are not included.
 - CI checks production dependencies and runs the project test suite for releases and pull requests.
 
 See [SECURITY.md](SECURITY.md) for responsible vulnerability reporting.
@@ -168,6 +201,10 @@ See [SECURITY.md](SECURITY.md) for responsible vulnerability reporting.
 ## Documentation
 
 - [Detailed user guide](USER_GUIDE.md)
+- [Music workspace, smart playlists and Automix](docs/music-workspace.md)
+- [Room permissions](docs/room-permissions.md)
+- [Spotify integration and compatibility limits](docs/spotify-library.md)
+- [Optional offline translation](docs/offline-translation.md)
 - [Release history](https://github.com/adam10000423-oss/Auralane/releases)
 - [Issue tracker](https://github.com/adam10000423-oss/Auralane/issues)
 

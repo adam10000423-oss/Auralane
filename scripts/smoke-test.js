@@ -83,9 +83,10 @@ const missingIds = [...new Set(rendererIds.filter((id) => !htmlIds.has(id)))];
 assert.deepEqual(missingIds, [], `Renderer references missing DOM ids: ${missingIds.join(", ")}`);
 
 const invokedChannels = new Set([...preloadSource.matchAll(/ipcRenderer\.invoke\(["']([^"']+)["']/g)].map((match) => match[1]));
+const mainHandlersSource = mainSource + read("src/main/featureHost.js");
 const handledChannels = new Set([
-  ...[...mainSource.matchAll(/ipcMain\.handle\(["']([^"']+)["']/g)].map((match) => match[1]),
-  ...[...mainSource.matchAll(/ipcMain\.on\(["']([^"']+)["']/g)].map((match) => match[1])
+  ...[...mainHandlersSource.matchAll(/ipcMain\.handle\(["']([^"']+)["']/g)].map((match) => match[1]),
+  ...[...mainHandlersSource.matchAll(/ipcMain\.on\(["']([^"']+)["']/g)].map((match) => match[1])
 ]);
 const missingHandlers = [...invokedChannels].filter((channel) => !handledChannels.has(channel));
 assert.deepEqual(missingHandlers, [], `Preload IPC channels without Main handlers: ${missingHandlers.join(", ")}`);
@@ -355,7 +356,7 @@ assert.match(appSource, /if \(visualizerIdleReset\) return;[\s\S]*?visualizerIdl
 assert.match(appSource, /lineIndex === activeIndex[\s\S]*?els\.moreMenu\?\.classList\.contains\("hidden"\)[\s\S]*?scrollLyricIntoView/, "Session lyric auto-scroll must pause while a global song menu is open.");
 assert.match(appSource, /function hideMoreMenu\(\)[\s\S]*?activeSidePanel === "lyrics"[\s\S]*?scrollLyricIntoView\(activeLyricElement\(\), \{ instant: true \}\)/, "Closing a song menu must re-anchor session lyrics exactly once.");
 assert.match(appSource, /function showMoreMenu[\s\S]*?activeSidePanel === "lyrics"[\s\S]*?lyricsScrollContainer\?\.scrollTo\([\s\S]*?behavior: "auto"/, "Opening a song menu must stop an already-running native session lyric scroll.");
-assert.match(appSource, /querySelectorAll\("\.lyric-word, \.lyric-text-token"\)[\s\S]*?--lyric-overflow-font-size/, "Session lyric wrapping must measure both timed and plain complete-word tokens.");
+assert.match(appSource, /querySelectorAll\("\.lyric-wrap-word, \.lyric-word:not\(\.lyric-wrap-word \.lyric-word\), \.lyric-text-token"\)[\s\S]*?--lyric-overflow-font-size/, "Session lyric wrapping must fit whole timed-word groups and plain tokens, not shrink their syllables independently.");
 assert.match(appSource, /lyricsSourceMenuOpen \? 66 : state\.lyricsExpanded \? 33 : 16/, "Opening the fullscreen lyrics source picker must reserve main-thread time for pointer interaction.");
 assert.match(stylesSource, /\.lyrics-version-menu \{[\s\S]*?contain: layout paint;[\s\S]*?transform: translateZ\(0\);/, "The fullscreen lyrics source menu must paint independently from the animated backdrop.");
 assert.match(stylesSource, /#lyricsPane \.lyric-word,[\s\S]*?word-break: keep-all !important;/, "Session lyrics must wrap between whole words rather than splitting letters.");
@@ -386,7 +387,7 @@ assert.match(appSource, /immediateSavedResult \|\| immediatePrefetchedResult[\s\
 assert.match(appSource, /persistAutomaticLyricsSelection\(track, prefetchedCandidate\)[\s\S]*?lyricsPrefetchCache\.delete\(prefetchKey\)/, "A consumed prefetch must be persisted once, then removed from memory.");
 assert.match(appSource, /sourceId: candidate\.sourceId \|\| ""/, "Prefetched lyrics must retain their exact provider source id.");
 assert.match(appSource, /upcomingTracksForLyricsPrefetch\(track, 5\)/, "Lyrics prefetch must warm the next five queue tracks.");
-assert.match(appSource, /for \(let index = 0; index < searches\.length; index \+= 3\)[\s\S]*?lyricsPrefetchCandidates\.set\(cacheKey, sortedCandidates\)/, "Next-track prefetch must fetch bounded provider batches and retain ordered backup candidates.");
+assert.match(appSource, /await Promise\.all\(\[worker\(\),worker\(\),worker\(\)\]\)[\s\S]*?lyricsPrefetchCandidates\.set\(cacheKey, sortedCandidates\)/, "Next-track prefetch must use three bounded workers and retain ordered backup candidates.");
 assert.match(appSource, /const hasPersistedLyrics = Boolean[\s\S]*?if \(!hasPersistedLyrics\)[\s\S]*?lyricsPrefetchCache\.set/, "Prefetched alternatives must not overwrite a song that already has saved lyrics.");
 assert.match(reloadLyricsSource, /persistAutomaticLyricsSelection\(track, replacement\)/, "Reload must persist the first refreshed result through the complete durable save path.");
 assert.match(appSource, /analyserNode\.fftSize = 2048/, "Audio-reactive cover analysis should use a bounded FFT size to leave GPU/CPU headroom.");

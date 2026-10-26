@@ -1,0 +1,30 @@
+/* The base glyph is always solid text. Only the sung-color duplicate is
+   clipped, so a mask/compositor repaint cannot erase the sentence. */
+html[data-color-scheme] :is(.lyrics-list,.focus-lyrics-list) .lyric-word.lyric-fluid-word {
+  --fluid-active:rgb(var(--lyrics-accent-color));
+  --fluid-upcoming:rgba(255,255,255,.48);
+  --fluid-passed:rgb(var(--lyrics-accent-color));
+  position:relative;
+  background:none !important;background-clip:border-box;-webkit-background-clip:border-box;
+  color:var(--fluid-upcoming) !important;-webkit-text-fill-color:currentColor !important;
+  transform:none !important;text-shadow:none !important;filter:none !important;
+  transition:none !important;
+}
+html[data-color-scheme] :is(.lyrics-list,.focus-lyrics-list) .lyric-fluid-word > .lyric-word-fill {
+  position:absolute;inset:0;display:block;white-space:pre;pointer-events:none;user-select:none;
+  color:var(--fluid-active) !important;-webkit-text-fill-color:currentColor !important;
+  background:none !important;text-shadow:none !important;filter:none !important;transition:none !important;
+  clip-path:inset(0 100% 0 0);
+}
+html[data-color-scheme=light] :is(.lyrics-list,.focus-lyrics-list) .lyric-word.lyric-fluid-word { --fluid-upcoming:#596474; }
+html[data-lyric-colors=custom] :is(.lyrics-list,.focus-lyrics-list) .lyric-word.lyric-fluid-word { --fluid-active:var(--lyric-custom-active,var(--accent));--fluid-passed:var(--lyric-custom-passed,var(--accent));--fluid-upcoming:var(--lyric-custom-upcoming,var(--muted)); }
+html[data-color-scheme] :is(.lyrics-list,.focus-lyrics-list) .lyric-fluid-word.passed,
+html[data-color-scheme] :is(.lyrics-list,.focus-lyrics-list) .lyric-fluid-word.lyric-fill-complete,
+html[data-color-scheme] :is(.lyrics-list,.focus-lyrics-list) .lyric-sung .lyric-fluid-word {
+  color:var(--fluid-passed) !important;
+}
+html[data-color-scheme] :is(.lyrics-list,.focus-lyrics-list) :is(.lyric-fluid-word.passed,.lyric-fluid-word.lyric-fill-complete,.lyric-sung .lyric-fluid-word) > .lyric-word-fill { visibility:hidden; }
+.lyric-line[dir=rtl] .lyric-word-fill { clip-path:inset(0 0 0 100%); }
+#queueList { overflow-anchor:none; }
+#queueList > .queue-row { content-visibility:auto;contain-intrinsic-block-size:auto 80px; }
+#queueList > .queue-row.dragging { content-visibility:visible; }

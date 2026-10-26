@@ -1,0 +1,22 @@
+/* Keep the clear affordance independent of generic search-submit button rules. */
+body .workspace-clear-wrap > button.input-clear { position:absolute;inset:auto 6px auto auto;top:50%;transform:translateY(-50%) !important;display:grid;place-items:center;width:26px;height:26px;min-width:26px;min-height:26px;padding:4px !important;background:transparent !important;color:var(--ink) !important;border:0;border-radius:6px;line-height:0;box-shadow:none; }
+body .workspace-clear-wrap > button.input-clear:hover { background:var(--button-hover) !important; }
+body .workspace-clear-wrap > button.input-clear :is(svg,.ui-icon,.standard-icon) { display:block;width:16px;height:16px;margin:0; }
+body .workspace-clear-wrap > button.input-clear[hidden] { display:none !important; }
+body .workspace-clear-wrap:has(input[type=number]) > button.input-clear { right:22px; }
+:is(.sidebar,.main,#rightPanel) { scrollbar-width:auto;scrollbar-color:auto; }
+#rightPanel { scrollbar-gutter:stable; }
+:is(.sidebar,.main,#rightPanel)::-webkit-scrollbar { width:6px;height:6px; }
+:is(.sidebar,.main,#rightPanel)::-webkit-scrollbar-track { background:transparent; }
+:is(.sidebar,.main,#rightPanel)::-webkit-scrollbar-thumb { background:transparent;border-radius:6px; }
+:is(.sidebar,.main,#rightPanel).scrollbar-active::-webkit-scrollbar-thumb { background:color-mix(in srgb,var(--muted) 55%,transparent); }
+:is(.sidebar,.main,#rightPanel)::-webkit-scrollbar-button { display:none;width:0;height:0; }
+#homeChips { scrollbar-width:none; }
+#homeChips::-webkit-scrollbar { display:none;width:0;height:0; }
+body.lyrics-maximized #rightPanel { scrollbar-width:none; }
+body.lyrics-maximized #rightPanel::-webkit-scrollbar { display:none;width:0;height:0; }
+html[data-color-scheme] body.has-media-background.lyrics-maximized.lyrics-custom-backdrop #mediaBackground { visibility:visible; }
+html[data-color-scheme] body.has-media-background.lyrics-maximized.lyrics-custom-backdrop #rightPanel { background:color-mix(in srgb,var(--bg) 25%,transparent) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important; }
+body.has-media-background.lyrics-maximized.lyrics-custom-backdrop #rightPanel::before,body.has-media-background.lyrics-maximized.lyrics-custom-backdrop #rightPanel::after { display:none !important; }
+html[data-color-scheme] body.lyrics-maximized[data-lyrics-background=theme] #rightPanel,
+html[data-color-scheme] body.lyrics-maximized[data-lyrics-background=custom]:not(.has-media-background) #rightPanel { background:radial-gradient(ellipse at 20% 20%,rgba(var(--theme-color),.2),transparent 65%),var(--bg) !important; }

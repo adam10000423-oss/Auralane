@@ -412,3 +412,4 @@ body.mini-empty .mini-controls { opacity: 0.48; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
 }
+body[data-material="glass"]:not([data-reduce-transparency="true"]) .mini-shell { background: rgb(26 28 31 / 90%); border-color: rgb(255 255 255 / 18%); box-shadow: inset 0 1px 0 #ffffff0c; }

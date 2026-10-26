@@ -1,0 +1,248 @@
+/* Light surfaces are scoped independently from the selected artwork accent. */
+html[data-color-scheme="light"] body {
+  --ink: #191b20;
+  --muted: #535966;
+  --subtle: #656b77;
+  --text: var(--ink);
+  --text-primary: var(--ink);
+  --text-secondary: var(--muted);
+  --divider: #d4d8df;
+  --border: #d4d8df;
+  --line: #d4d8df;
+  --line-soft: rgb(28 38 56 / 12%);
+  --button: #e9ecf2;
+  --button-hover: #dce2ec;
+  --button-press: #cfd7e4;
+  --glass-fill: rgb(255 255 255 / 80%);
+  --glass-rim: rgb(105 120 140 / 22%);
+  --glass-shadow: inset 0 1px 0 #fff, 0 8px 28px rgb(40 55 75 / 12%);
+  --popover-shadow: 0 12px 32px rgb(40 55 75 / 16%);
+}
+
+html[data-color-scheme="light"] :is(
+  .more-menu, .quality-menu, .sleep-menu, .audio-output-menu, .account-switcher,
+  .search-suggestions, .recognition-history-panel, .lyrics-quick-drawer,
+  .lyrics-more-popover, .lyrics-version-menu, .compact-more-panel,
+  .compact-volume-panel, .playlist-modal, .command-panel, .recognition-modal,
+  .lyrics-search-modal, .lyrics-timeline-modal, .workspace-dialog,
+  .online-room-dialog, [role="tooltip"]
+) {
+  background: var(--surface, #fff) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--popover-shadow) !important;
+}
+
+html[data-color-scheme="light"] body[data-material="glass"] :is(
+  .more-menu, .quality-menu, .sleep-menu, .audio-output-menu, .account-switcher,
+  .search-suggestions, .recognition-history-panel, .lyrics-quick-drawer,
+  .lyrics-more-popover, .lyrics-version-menu, .compact-more-panel,
+  .compact-volume-panel, .workspace-dialog, .online-room-dialog
+) { background: var(--glass-fill) !important; border-color: var(--glass-rim) !important; }
+
+html[data-color-scheme="light"] :is(
+  .modal-backdrop, .command-backdrop, .recognition-dialog,
+  .lyrics-search-backdrop, .lyrics-timeline-backdrop
+) { background: rgb(75 90 110 / 22%) !important; }
+html[data-color-scheme="light"] dialog::backdrop { background: rgb(75 90 110 / 22%); }
+
+html[data-color-scheme="light"] :is(
+  .collection-hero, .artist-hero, .podcast-hero, .local-playlist-panel,
+  .local-playlist-tools, .offline-dashboard-card, .sync-state-card,
+  .settings-preview, .settings-list-row, .lyrics-timeline-editor, .lyrics-meta,
+  .lyrics-offset-tools, .lyrics-candidate-preview, .lyrics-candidate,
+  .recognition-capture-panel, .recognition-card, .recognition-empty-state,
+  .download-manager-row, .download-manager-summary, kbd
+) {
+  background: var(--surface-2) !important;
+  color: var(--ink);
+  border-color: var(--line-soft);
+  box-shadow: none;
+}
+html[data-color-scheme="light"] :is(.collection-hero,.artist-hero,.podcast-hero)::before {
+  background: linear-gradient(90deg, rgb(255 255 255 / 96%), rgb(255 255 255 / 80%)) !important;
+}
+html[data-color-scheme="light"] :is(.collection-hero,.artist-hero,.podcast-hero) :is(h1,h2,p,.subtitle,.eyebrow) {
+  color: var(--ink); text-shadow: none;
+}
+
+/* Keep neutral controls low-specificity so primary and selected states win. */
+html[data-color-scheme="light"] :where(
+  .secondary, .utility-button, .queue-action, .lyrics-tool,
+  .sidebar-collapse, #lyricsExpandButton, #lyrics-restore-btn,
+  .row-download, .row-like, .unified-more-trigger, .history-remove,
+  .queue-remove, .collection-layout-button, .collection-follow-button,
+  .local-music-icon-action, .recognition-source-option,
+  .lyrics-sync-button, .focus-sync-button, .focus-close,
+  .modal-close-button, .quality-button, .quality-badge,
+  .playlist-create-dialog-actions button, .settings-card button, .actions-grid button,
+  .account-panel button, .playlist-modal button, .lyrics-search-modal button, .lyrics-timeline-modal button,
+  .source-tools button, .integration-tools button, .auralane-listening-tools button,
+  .online-room-dialog button, .workspace-dialog button, .compact-menu-row > button,
+  .player .controls button:not(#playButton), .audio-output-button
+) {
+  background: var(--button) !important;
+  color: var(--ink);
+  border-color: var(--line-soft);
+  box-shadow: none !important;
+  text-shadow: none;
+}
+html[data-color-scheme="light"] :is(
+  .more-menu button, .quality-menu button, .sleep-option, .audio-output-option,
+  .account-switcher-row, .account-switcher-commands button, .command-item,
+  .recognition-history-row, .search-suggestion, .playlist-choice,
+  .lyrics-version-menu button, .workspace-song-list .workspace-icon,
+  .settings-category-nav button, .side-tab, .nav
+) { background: transparent; color: var(--ink); border-color: transparent; box-shadow: none; }
+
+html[data-color-scheme="light"] :where(
+  .secondary, .utility-button, .queue-action, .lyrics-tool, .sidebar-collapse,
+  #lyricsExpandButton, #lyrics-restore-btn, .row-download, .row-like,
+  .unified-more-trigger, .queue-remove, .history-remove, .audio-output-button,
+  .local-music-icon-action, .recognition-source-option, .lyrics-sync-button,
+  .focus-sync-button, .focus-close, .modal-close-button, .quality-button,
+  .settings-card button, .source-tools button, .integration-tools button, .actions-grid button,
+  .account-panel button, .playlist-modal button, .lyrics-search-modal button, .lyrics-timeline-modal button,
+  .online-room-dialog button, .workspace-dialog button,
+  .player .controls button:not(#playButton), .compact-menu-row > button
+):hover:not(:disabled) {
+  background: var(--button-hover) !important; color: var(--ink); border-color: var(--line);
+}
+html[data-color-scheme="light"] :is(
+  .more-menu button, .quality-menu button, .sleep-option, .audio-output-option,
+  .account-switcher-row, .account-switcher-commands button, .command-item,
+  .recognition-history-row, .search-suggestion, .playlist-choice,
+  .lyrics-version-menu button, .compact-menu-row, .side-tab, .nav
+):hover:not(:disabled) { background: var(--button-hover) !important; color: var(--ink); }
+
+html[data-color-scheme="light"] :is(
+  .nav.active, .side-tab.active, .chip.active, .filter-toggle.active,
+  .secondary.active, .utility-button.active, .queue-action.active,
+  .lyrics-tool.active, .sleep-option.active, .audio-output-option.active,
+  .account-switcher-row.active, .command-item.active,
+  .lyrics-version-menu button.active, .recognition-source-option.active,
+  .settings-category-nav button.active, .workspace-settings-tabs button[aria-pressed="true"]
+) {
+  color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important;
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+}
+html[data-color-scheme="light"] :is(
+  .row, .queue-row, .local-track, .playlist-edit-row, .history-row,
+  .podcast-row, .workspace-song-list li, .recognition-card
+):hover { background: var(--surface-2) !important; }
+html[data-color-scheme="light"] .queue-row-actions {
+  background: rgb(247 248 251 / 97%); box-shadow: 0 3px 12px rgb(40 55 75 / 12%);
+}
+html[data-color-scheme="light"] :is(.row-like.liked,#likeButton.liked) {
+  color: #bf294a !important; background: #fce8ee !important; border-color: #efbcc8;
+}
+html[data-color-scheme="light"] :is(.row-like.liked,#likeButton.liked):hover {
+  color: #a51c3b !important; background: #f8d4df !important;
+}
+html[data-color-scheme="light"] :is(.danger, .secondary.danger, .error, .sync-state-error) { color: #b4233b; }
+html[data-color-scheme="light"] :is(button,[role="button"]):focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+html[data-color-scheme="light"] :is(button,input,select,textarea):disabled {
+  color: var(--subtle); cursor: not-allowed; box-shadow: none;
+}
+html[data-color-scheme="light"] body button:disabled {
+  color: var(--subtle) !important;
+  background-color: var(--button) !important;
+  text-shadow: none;
+}
+html[data-color-scheme="light"] button:disabled:hover {
+  background-color: var(--button) !important; color: var(--subtle) !important;
+}
+
+html[data-color-scheme="light"] :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),textarea,select):not(:where(.search input,.collection-search input)) {
+  color: var(--ink); background-color: var(--surface-2) !important;
+  border-color: var(--line); caret-color: var(--accent);
+}
+html[data-color-scheme="light"] :is(input,textarea)::placeholder { color: var(--subtle); opacity: 1; }
+html[data-color-scheme="light"] :is(input,textarea,select):focus-visible {
+  outline: 2px solid color-mix(in srgb,var(--accent) 60%,transparent); outline-offset: 1px;
+}
+html[data-color-scheme="light"] input:is([type="checkbox"],[type="radio"]),
+html[data-color-scheme="light"] progress { accent-color: var(--accent); }
+html[data-color-scheme="light"] .compact-player .player #seekBar::-webkit-slider-runnable-track {
+  background: linear-gradient(to right,var(--accent) var(--seek-position,0%),#cbd1dc var(--seek-position,0%));
+}
+html[data-color-scheme="light"] :is(.sleep-countdown,.settings-key,kbd) {
+  background: var(--surface-3); color: var(--ink); border-color: var(--line); box-shadow: none;
+}
+html[data-color-scheme="light"] .account-button-avatar {
+  background-color: var(--surface-3); color: var(--ink); box-shadow: none;
+}
+html[data-color-scheme="light"] :is(.quality-badge,.quality-button,.sleep-menu-header,.account-switcher-state) {
+  color: var(--accent); text-shadow: none;
+}
+html[data-color-scheme="light"] .recognition-status-dot { background: #8995a7; box-shadow: 0 0 0 4px #e9edf4; }
+html[data-color-scheme="light"] .skeleton-row { background: var(--surface-2); }
+html[data-color-scheme="light"] :is(.skeleton-row span,.skeleton-row i,.skeleton-card span,.skeleton-card i,.skeleton-hero span,.skeleton-hero i) {
+  background-image: linear-gradient(100deg,#e7ebf1 20%,#f8f9fc 40%,#e7ebf1 60%);
+}
+html[data-color-scheme="light"] ::-webkit-scrollbar-thumb { background: #b9c1cf; }
+html[data-color-scheme="light"] ::-webkit-scrollbar-thumb:hover { background: #929fb3; }
+html[data-color-scheme="light"] ::selection { background: color-mix(in srgb,var(--accent) 22%,white); color: var(--ink); }
+
+/* Expanded lyrics stay opaque, but no longer force the dark palette. */
+html[data-color-scheme="light"] body.lyrics-maximized {
+  --ink: #191b20; --muted: #535966; background: var(--bg) !important;
+}
+html[data-color-scheme="light"] body.lyrics-maximized .queue-panel,
+html[data-color-scheme="light"] body.lyrics-maximized .queue-panel::before,
+html[data-color-scheme="light"] body.lyrics-maximized footer.player,
+html[data-color-scheme="light"] .focus-mode { background: var(--bg) !important; color: var(--ink); }
+html[data-color-scheme="light"] body.lyrics-maximized .native-titlebar {
+  background: color-mix(in srgb,var(--accent) 6%,white);
+}
+html[data-color-scheme="light"] body.lyrics-maximized .native-titlebar-name { color: var(--ink); }
+html[data-color-scheme="light"] :is(.lyrics-version-button,#lyricsOffsetValue) {
+  background: var(--button) !important;
+  color: var(--ink) !important;
+  border-color: var(--line);
+  box-shadow: none;
+  text-shadow: none;
+}
+html[data-color-scheme="light"] .lyrics-version-button:hover:not(:disabled),
+html[data-color-scheme="light"] .lyrics-version-button[aria-expanded="true"] {
+  background: var(--button-hover) !important;
+}
+html[data-color-scheme="light"] .lyrics-version-button > small,
+html[data-color-scheme="light"] .lyrics-quick-offset .lyrics-offset-label {
+  color: var(--muted);
+}
+html[data-color-scheme="light"] body.lyrics-maximized #lyricsQuickSettings > summary { color:var(--ink); }
+html[data-color-scheme="light"] body.lyrics-maximized .controls :is(#prevButton,#nextButton) { color:var(--ink) !important; }
+html[data-color-scheme="light"] .focus-bg { background: var(--bg); opacity: .05; }
+html[data-color-scheme="light"] .focus-mode::before { background: rgb(255 255 255 / 86%); }
+html[data-color-scheme="light"] :is(#focusTitle,#focusArtist,.lyric-line,.lyric-line:hover,.lyric-line.active) {
+  color: var(--ink); text-shadow: none;
+}
+html[data-color-scheme="light"] :is(.lyric-translation,.lyric-romanization,.focus-lyrics-list .status) { color: var(--muted); text-shadow: none; }
+html[data-color-scheme="light"] .lyric-line { filter: none !important; }
+html[data-color-scheme="light"] .lyric-grapheme {
+  --lyric-fill-direction: 90deg;
+  background-image: linear-gradient(var(--lyric-fill-direction),rgb(var(--lyrics-accent-color)) 0%,rgb(var(--lyrics-accent-color)) calc(var(--grapheme-progress) * 100%),#596474 calc(var(--grapheme-progress) * 100%),#596474 100%);
+  filter: none !important;
+}
+html[data-color-scheme="light"] .lyric-line[dir="rtl"] .lyric-grapheme { --lyric-fill-direction:270deg; }
+html[data-color-scheme="light"] .lyric-line:not(.active):not(.background-active) .lyric-grapheme { background-image:linear-gradient(#596474,#596474); }
+html[data-color-scheme="light"] :is(.focus-art,.lyrics-fullscreen-cover) { box-shadow: 0 12px 32px rgb(40 55 75 / 18%); }
+html[data-color-scheme="light"] body.sidebar-collapsed .sidebar:hover { box-shadow: 12px 0 28px rgb(40 55 75 / 14%); }
+
+/* Intentional colored actions keep the selected accent, not the neutral fill. */
+html[data-color-scheme="light"] body :is(
+  #playButton,.row-play,.queue-play-hover,.artist-play-button,.library-play,
+  .primary-action,.lyrics-tool.primary,.recognition-start-button,.online-room-dialog button.primary
+):not(:disabled) {
+  background: var(--accent) !important; color: var(--on-accent,#fff) !important;
+  border-color: transparent; box-shadow: none;
+}
+html[data-color-scheme="light"] body :is(.cover-expand-button,.category-sleeve) { color: #fff; }
+html[data-color-scheme="light"] .lyrics-candidate:is(:hover,.active) {
+  background:color-mix(in srgb,var(--accent) 8%,var(--surface)) !important;
+  border-color:color-mix(in srgb,var(--accent) 35%,var(--line));
+}

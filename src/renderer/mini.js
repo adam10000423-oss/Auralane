@@ -234,7 +234,11 @@ function renderEmpty() {
 function render(payload = state.payload) {
   state.payload = payload || null;
   applyMiniLanguage();
-  if (payload?.themeColor) applyThemeColor(payload.themeColor);
+  document.body.dataset.material = payload?.material === "glass" ? "glass" : "standard";
+  document.body.dataset.reduceTransparency = String(payload?.reduceTransparency === true);
+  document.documentElement.dataset.colorScheme=payload?.colorScheme==="light"?"light":"dark";
+  if (payload?.themeColor) applyThemeColor(payload.readableThemeColor || payload.themeColor);
+  document.documentElement.style.setProperty("--mini-on-accent",(payload.readableThemeColor||payload.themeColor||[0,0,0]).reduce((sum,value,index)=>sum+Number(value)*[.299,.587,.114][index],0)>150?"#101014":"#fff");
   const track = payload?.track || null;
   if (!track) {
     state.timelinePlaying = false;

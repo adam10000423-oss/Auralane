@@ -1,0 +1,20 @@
+.together-tools { box-sizing: border-box; max-width: 800px; margin: auto; padding: 24px; font: 14px/1.5 system-ui, sans-serif; color: #edf0f2; background: #202225; letter-spacing: 0; }
+.together-tools * { box-sizing: border-box; min-width: 0; }
+.together-tools h2 { font-size: 20px; margin: 0 0 16px; }
+.together-tools form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.together-tools label { display: grid; gap: 4px; flex: 1 1 180px; }
+.together-tools input:not([type=checkbox]):not([type=range]) { width: 100%; min-height: 36px; border: 1px solid #72777d; border-radius: 4px; padding: 6px; background: #303439; color: inherit; }
+.together-tools input[type=checkbox] { width: 20px; height: 20px; accent-color: #41bb93; }
+.together-tools button { min-height: 36px; padding: 6px 12px; border: 1px solid #72777d; border-radius: 4px; background: #343a40; color: inherit; cursor: pointer; font: inherit; white-space: normal; overflow-wrap: anywhere; }
+.together-tools button:disabled { opacity: .45; cursor: default; }
+.together-tools :focus-visible { outline: 2px solid #63d6af; outline-offset: 2px; }
+.together-tools output { display: block; overflow-wrap: anywhere; margin: 16px 0; color: #63d6af; }
+.together-tools [role=alert] { color: #ff9696; overflow-wrap: anywhere; }
+.together-controls { display: flex; align-items: center; gap: 8px; }
+.together-controls[hidden] { display: none; }
+.together-controls input { flex: 1; width: 80px; accent-color: #41bb93; }
+.together-tools ol { padding-left: 24px; }
+.together-tools li { padding: 8px 0; border-bottom: 1px solid #484e53; overflow-wrap: anywhere; }
+.together-tools li span { display: inline-block; margin: 0 10px 6px 0; }
+.together-tools li button { margin: 0 6px 6px 0; }
+@media (max-width: 480px) { .together-tools { padding: 16px; } .together-tools label { flex-basis: 100%; } }

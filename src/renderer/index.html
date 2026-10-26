@@ -5,9 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Auralane</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="playback-diagnostics.css">
+  <link rel="stylesheet" href="listeningTools.css">
+  <link rel="stylesheet" href="sourceTools.css">
+  <link rel="stylesheet" href="togetherTools.css">
+  <link rel="stylesheet" href="integrationTools.css">
+  <link rel="stylesheet" href="performanceTools.css">
+  <link rel="stylesheet" href="featureHost.css">
+  <link rel="stylesheet" href="onlineTogetherTools.css">
+  <link rel="stylesheet" href="musicWorkspace.css">
   <link rel="stylesheet" href="games.css">
+  <link rel="stylesheet" href="compactPlayer.css">
+  <link rel="stylesheet" href="glassRefinements.css">
+  <link rel="stylesheet" href="lyricMotion.css">
+  <link rel="stylesheet" href="workspacePolish.css">
+  <link rel="stylesheet" href="lightTheme.css">
+  <link rel="stylesheet" href="requestedPolish.css">
+  <link rel="stylesheet" href="glassTransparency.css">
+  <link rel="stylesheet" href="interactionPolish.css">
+  <link rel="stylesheet" href="lyricColors.css">
+  <link rel="stylesheet" href="renderPerformance.css">
+  <link rel="stylesheet" href="lyricsCard.css">
 </head>
 <body class="player-empty">
+  <div id="mediaBackground" aria-hidden="true"></div>
   <div class="native-titlebar" aria-hidden="true">
     <div class="native-titlebar-brand">
       <img class="native-titlebar-icon" src="auralane-icon.png" alt="">
@@ -35,10 +56,12 @@
       <div class="nav-group">
           <span class="nav-label" data-i18n="nav.libraryGroup">Library</span>
           <button class="nav" data-view="library" data-i18n="nav.library" type="button">Library</button>
-          <button class="nav" data-view="liked" data-i18n="nav.liked" type="button">Liked songs</button>
           <button class="nav" data-view="downloaded" data-i18n="nav.downloaded" type="button">Downloaded</button>
           <button class="nav" data-view="localMusic" type="button">Local Music</button>
           <button class="nav" data-view="playlists" data-i18n="nav.playlists" type="button">Playlists</button>
+          <button class="nav" data-view="liked" data-i18n="nav.liked" type="button">Liked songs</button>
+          <button class="nav" data-view="replay" data-i18n-skip type="button">Replay</button>
+          <button class="nav" data-view="spotify" data-i18n-skip type="button">Spotify</button>
       </div>
       <div class="nav-group">
         <span class="nav-label" data-i18n="nav.system">System</span>
@@ -742,6 +765,8 @@
         </button>
       </section>
 
+      <section id="replayView" class="view workspace-replay hidden" data-i18n-skip></section>
+      <section id="spotifyView" class="view workspace-spotify hidden" data-i18n-skip></section>
       <section id="localMusicView" class="view local-music-view hidden">
         <div class="local-music-hero sticky-view-header">
           <div><span class="eyebrow">On this device</span><h1>Local Music</h1><p id="localMusicStatus">Choose a folder to build your local music library.</p></div>
@@ -887,6 +912,11 @@
               <option value="lyricsplus">LyricsPlus</option>
               <option value="youtube-transcript">YouTube transcript</option>
               <option value="lyrics-ovh">Lyrics.ovh</option>
+              <option value="lrc-red">lrc.red</option>
+              <option value="binilyrics">BiniLyrics</option>
+              <option value="unison">Unison</option>
+              <option value="betterlyrics-portato">BetterLyrics Portato</option>
+              <option value="genius">Genius</option>
               <option value="local">Local LRC</option>
             </select>
             </label>
@@ -980,6 +1010,10 @@
             <div class="section-head compact-head">
               <h2>Playback</h2>
             </div>
+            <label class="settings-field inline-field">
+              <span><strong id="settingsSmartQueueLabel" data-i18n-skip>Autoplay recommendations</strong></span>
+              <input id="settingsSmartQueue" type="checkbox">
+            </label>
             <label class="settings-field inline-field">
               <span>
                 <strong>Web fallback</strong>
@@ -1221,6 +1255,8 @@
               <div class="shortcut-item"><span>Play / pause</span><span class="shortcut-keys"><kbd>Space</kbd></span></div>
               <div class="shortcut-item"><span>Next track</span><span class="shortcut-keys"><kbd>Ctrl</kbd><kbd>Right</kbd></span></div>
               <div class="shortcut-item"><span>Previous track</span><span class="shortcut-keys"><kbd>Ctrl</kbd><kbd>Left</kbd></span></div>
+              <div class="shortcut-item"><span>Previous lyrics source (Lyrics view)</span><span class="shortcut-keys"><kbd>Up</kbd></span></div>
+              <div class="shortcut-item"><span>Next lyrics source (Lyrics view)</span><span class="shortcut-keys"><kbd>Down</kbd></span></div>
             </div>
             <div class="shortcut-editor">
               <label><span>Global play / pause</span><input id="shortcutPlayPause" value="Ctrl+Alt+Space"></label>
@@ -1333,7 +1369,7 @@
             <details id="lyricsQuickSettings" class="lyrics-quick-settings">
               <summary class="lyrics-tool">Display</summary>
               <div class="lyrics-quick-drawer">
-                <label>Background<select id="lyricsQuickBackground"><option value="song">Follow song</option><option value="theme">Theme</option><option value="plain">Plain</option></select></label>
+                <label>Background<select id="lyricsQuickBackground"><option value="song">Follow song</option><option value="theme">Theme</option><option value="plain">Plain</option><option value="custom" hidden disabled>Custom image / video</option></select></label>
                 <label>Alignment<select id="lyricsQuickAlign"><option value="auto">Duet / auto</option><option value="left">Left</option><option value="center">Center</option></select></label>
                 <label>View<select id="lyricsQuickDisplay"><option value="scroll">Scrolling lyrics</option><option value="single">Current line</option></select></label>
                 <label>Cover<select id="lyricsQuickCover"><option value="square">Square cover</option><option value="vinyl">Vinyl record</option></select></label>
@@ -1513,15 +1549,7 @@
         <span class="recognition-status-dot" aria-hidden="true"></span>
         <p id="recognitionStatus">System audio captures audio shared by a window or screen.</p>
       </div>
-      <section class="recognition-results-section" aria-labelledby="recognitionResultsTitle">
-        <div class="recognition-results-head">
-          <div><span class="eyebrow">Matches</span><h3 id="recognitionResultsTitle">Possible songs</h3></div>
-          <small>Choose a result to play it in Auralane.</small>
-        </div>
-        <div id="recognitionCandidates" class="recognition-candidates">
-          <div class="recognition-empty-state"><span class="ui-icon icon-audio" aria-hidden="true"></span><strong>Ready when you are</strong><small>Start listening to see possible matches here.</small></div>
-        </div>
-      </section>
+      <div id="recognitionCandidates" class="recognition-candidates hidden" aria-hidden="true"></div>
     </div>
   </div>
   <div id="qualityMenu" class="quality-menu hidden" role="menu"><button data-quality="auto">Auto</button><button data-quality="high">High</button><button data-quality="balanced">Balanced</button><button data-quality="data-saver">Data saver</button></div>
@@ -1619,6 +1647,7 @@
     <button data-more-action="album" type="button">Go to album</button>
     <button data-more-action="playlist" type="button">Add to playlist</button>
     <button data-more-action="remove-queue" type="button">Remove from queue</button>
+    <button data-more-action="versions" type="button">Other versions</button>
     <button data-more-action="remove-history" type="button">Remove from history</button>
     <button data-more-action="remove-playlist" type="button">Remove from this playlist</button>
   </div>
@@ -1718,6 +1747,36 @@
 
   <script src="i18n.generated.js"></script>
   <script src="gameRules.js"></script>
+  <script src="languagePicker.js"></script>
+  <script src="languageCatalog.js"></script>
+  <script src="lyricsCard.js"></script>
   <script src="app.js"></script>
+  <script src="listeningTools.js"></script>
+  <script src="sourceTools.js"></script>
+  <script src="togetherTools.js"></script>
+  <script src="integrationTools.js"></script>
+  <script src="performanceTools.js"></script>
+  <script src="translationPack.js"></script>
+  <script src="musicWorkspaceModel.js"></script>
+  <script src="musicWorkspace.js"></script>
+  <script src="spotifyLibrary.js"></script>
+  <script src="autoplayModel.js"></script>
+  <script src="lyricText.js"></script>
+  <script src="lyricMotion.js"></script>
+  <script src="youtubeArtwork.js"></script>
+  <script src="workspaceAppearance.js"></script>
+  <script src="lyricColors.js"></script>
+  <script src="queueRenderer.js"></script>
+  <script src="lyricFill.js"></script>
+  <script src="workspacePolish.js"></script>
+  <script src="interactionPolish.js"></script>
+  <script src="startupUpdate.js"></script>
+  <script src="compactPlayer.js"></script>
+  <script src="audio-tools.generated.js"></script>
+  <script src="automix.js"></script>
+  <script src="onlineTogetherTools.js"></script>
+  <script src="featureHost.js"></script>
+  <script src="playback-diagnostics-model.js"></script>
+  <script src="playback-diagnostics.js"></script>
 </body>
 </html>

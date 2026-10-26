@@ -1,7 +1,7 @@
 {
   "name": "auralane-desktop",
   "productName": "Auralane",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "A polished desktop music player for YouTube Music with synced lyrics, translation, offline playback, and native mini-player experiences.",
   "main": "src/main/main.js",
   "private": false,
@@ -19,14 +19,26 @@
   "scripts": {
     "start": "electron .",
     "test": "node scripts/smoke-test.js",
+    "test:online": "node --test scripts/test-online-together.js scripts/test-online-together-ui.js scripts/test-online-together-compat.js server/listen-together/server.test.js server/listen-together/permissions.test.js",
+    "test:workspace": "node --test scripts/test-music-workspace.js",
+    "test:spotify": "node --test scripts/test-spotify-library.js scripts/test-spotify-accounts.js",
+    "test:player": "node --test scripts/test-compact-player.js",
+    "test:ui": "node --test scripts/test-ui-refinements.js scripts/test-queue-optimistic.js scripts/test-settings-simplification.js scripts/test-lyric-motion.js scripts/test-video-artwork.js scripts/test-workspace-polish.js scripts/test-light-theme.js",
+    "test:theme": "node --test scripts/test-light-theme.js",
+    "test:lyric-text": "node --test scripts/test-lyric-text.js scripts/test-lyrics-fidelity.js scripts/test-lyrics-candidate-layout.js scripts/test-lyric-presentation.js scripts/test-lyrics-regressions.js",
+    "test:autoplay": "node --test scripts/test-autoplay.js",
+    "build:audio": "node scripts/build-audio-tools.js",
+    "test:features": "node --test scripts/test-feature-host.js scripts/test-session-tools.js scripts/test-lyrics-fidelity.js scripts/test-lyrics-controls.js scripts/test-lyrics-providers.js scripts/test-autoplay.js scripts/test-listen-together.js scripts/test-listening-tools.js scripts/test-music-integrations.js scripts/sourceManager.test.js scripts/sourceTools.test.js scripts/playback-diagnostics-test.js",
     "i18n:generate": "node scripts/generate-i18n.js",
     "pack": "electron-builder --dir",
     "dist:app": "electron-builder",
     "dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "44.4.3",
-    "electron-builder": "26.15.3"
+    "electron": "44.9.3",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.28.2",
+    "playwright-core": "1.64.1"
   },
   "build": {
     "appId": "com.auralane.desktop",
@@ -46,22 +58,6 @@
     ],
     "win": {
       "icon": "src/assets/auralane-icon.ico",
-      "extraResources": [
-        {
-          "from": "vendor/local-translate/runtime",
-          "to": "local-translate/runtime",
-          "filter": [
-            "**/*"
-          ]
-        },
-        {
-          "from": "vendor/local-translate/models",
-          "to": "local-translate/models",
-          "filter": [
-            "*.argosmodel"
-          ]
-        }
-      ],
       "target": [
         "nsis",
         "portable"
@@ -95,9 +91,12 @@
     "@xmldom/xmldom": "0.9.12",
     "bgutils-js": "^4.0.2",
     "electron-updater": "6.8.9",
-    "music-metadata": "11.14.0",
+    "music-metadata": "11.16.1",
     "shazamio-core": "^1.3.1",
-    "transliteration": "^2.6.1"
+    "transliteration": "^2.6.1",
+    "web-audio-beat-detector": "8.2.39",
+    "ws": "8.22.0",
+    "yauzl": "3.4.0"
   },
   "overrides": {
     "js-yaml": "4.3.2"

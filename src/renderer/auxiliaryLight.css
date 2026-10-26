@@ -1,0 +1,50 @@
+html[data-color-scheme="light"] {
+  color-scheme: light;
+  --ink: #191b20;
+  --muted: #535966;
+  --subtle: #656b77;
+  --surface: rgb(250 251 253 / 96%);
+  --control-hover: #e2e7ef;
+}
+html[data-color-scheme="light"] body { color: var(--ink); }
+html[data-color-scheme="light"] :is(.mini-shell,.tray-player) {
+  background: var(--surface) !important;
+  border-color: rgb(80 95 120 / 20%);
+  box-shadow: inset 0 1px #fff, 0 6px 18px rgb(35 50 75 / 12%);
+}
+html[data-color-scheme="light"] .mini-shell::after { background: rgb(255 255 255 / 76%); }
+html[data-color-scheme="light"] .mini-drag-hint {
+  background: #edf1f6; color: var(--muted); border-color: #cbd3df; box-shadow: 0 -2px 8px #26324816;
+}
+html[data-color-scheme="light"] .mini-drag-hint:hover { background: #dce3ee; color: var(--ink); }
+html[data-color-scheme="light"] .mini-volume-popover { background: #fff; border-color: #cbd3df; box-shadow: 0 5px 16px #26324820; }
+html[data-color-scheme="light"] :is(.mini-icon-button,.mini-window-button) { color: var(--ink); }
+html[data-color-scheme="light"] :is(.mini-icon-button,.mini-window-button):hover { background: var(--control-hover); }
+html[data-color-scheme="light"] :is(.mini-track-info:hover #miniTitle,.mini-secondary.active) { color: rgb(var(--theme-color)); }
+html[data-color-scheme="light"] .mini-play { color: var(--mini-on-accent,#fff); box-shadow: none; }
+html[data-color-scheme="light"] input[type="range"]::-webkit-slider-runnable-track {
+  background: linear-gradient(to right,rgb(var(--theme-color)) var(--range-progress,0%),#cbd3df var(--range-progress,0%));
+}
+html[data-color-scheme="light"] #likeButton.active { color: #bf294a; }
+html[data-color-scheme="light"] .tray-player :is(header button,.controls button,footer button) { color: var(--ink); background: #e9edf4; }
+html[data-color-scheme="light"] .tray-player :is(header button,.controls button,footer button):hover { background: #dce3ed; }
+html[data-color-scheme="light"] .tray-player .controls .primary { background: rgb(var(--theme-color)); color: var(--mini-on-accent,#fff); }
+html[data-color-scheme="light"] .tray-player .track-copy span { color: var(--muted); }
+html[data-color-scheme="light"] .tray-player .art { background-color: #e7ebf2; box-shadow: 0 6px 18px #26324820; }
+html[data-color-scheme="light"] .tray-player input { accent-color: rgb(var(--theme-color)); }
+
+/* Preserve the floating lyric window's opacity and shadow-free glyphs. */
+html[data-color-scheme="light"] .lyrics-container {
+  background: rgba(250,251,253,var(--panel-opacity)); border-color: rgb(80 95 120 / 20%);
+  box-shadow: 0 4px 16px rgb(35 50 75 / 12%);
+}
+html[data-color-scheme="light"] .lyrics-container:is(:hover,:focus-within) {
+  background: rgba(250,251,253,var(--panel-hover-opacity)); border-color: rgba(var(--theme-color-rgb),.4);
+  box-shadow: 0 6px 18px rgb(35 50 75 / 16%);
+}
+html[data-color-scheme="light"] .current-line { color: #747c89; text-shadow: none; }
+html[data-color-scheme="light"] .current-line.plain { color: var(--ink); text-shadow: none; }
+html[data-color-scheme="light"] .secondary-line { color: #444c5a; text-shadow: none; }
+html[data-color-scheme="light"] .icon-button { color: #444c5a; background: #e9edf4; border-color: #cad3df; }
+html[data-color-scheme="light"] .icon-button:hover { color: var(--ink); background: #dce3ed; border-color: rgba(var(--theme-color-rgb),.4); }
+html[data-color-scheme="light"] :is(button,input):focus-visible { outline: 2px solid rgb(var(--theme-color)); outline-offset: 2px; }

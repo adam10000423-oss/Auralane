@@ -183,8 +183,10 @@ input:focus-visible {
 }
 
 .shell {
-  height: calc(100vh - var(--native-titlebar-height));
-  margin-top: var(--native-titlebar-height);
+  position: fixed;
+  inset: var(--native-titlebar-height) 0 0;
+  height: auto;
+  margin: 0;
   display: grid;
   grid-template-columns: 238px minmax(0, 1fr) var(--right-panel-width);
   background:
@@ -7056,7 +7058,7 @@ body.queue-dragging #queueList .queue-row:not(.queue-drag-ghost) {
   display: none !important;
 }
 
-.lyrics-maximized .controls button:not(#prevButton):not(#playButton):not(#nextButton) {
+.lyrics-maximized:not(.compact-player) .controls button:not(#prevButton):not(#playButton):not(#nextButton) {
   display: none !important;
 }
 
@@ -8665,7 +8667,7 @@ body.sidebar-collapsed .sidebar:hover .nav{width:100%;padding:0 12px 0 16px;marg
 }
 
 .shell {
-  position: relative;
+  position: fixed;
   z-index: 1;
   background: transparent;
 }
@@ -10637,7 +10639,7 @@ canvas.lyrics-vinyl-wave{
 @media(max-width:620px){.collection-controls{flex-wrap:wrap}.collection-controls .collection-search{max-width:none}.collection-controls .collection-sort{width:100%}}
 
 /* Stable settings shortcuts: each command owns one row and one key cluster. */
-.shortcut-grid { display: grid; gap: 8px; }
+.shortcut-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
 .shortcut-item { min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 16px; padding: 8px 0; }
 .shortcut-item > span:first-child { min-width: 0; color: var(--muted); }
 .shortcut-keys { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 112px; }
@@ -10895,6 +10897,15 @@ body.sidebar-collapsed .sidebar:not(:hover) + .sidebar-release-notice .sidebar-r
   padding-inline: 6px;
 }
 
+/* Skip offscreen row painting without changing DOM order or keyboard access. */
+#likedResults .unified-track-row,
+#downloadedResults .unified-track-row,
+.collection-tracks .unified-track-row,
+#searchResults .unified-track-row {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 76px;
+}
+
 /* Action columns are fixed so hover cannot change the song text layout. */
 .unified-track-row.liked-row,
 .collection-track-row.liked-row.row,
@@ -10953,3 +10964,9 @@ body.sidebar-collapsed .sidebar:not(:hover) + .sidebar-release-notice .sidebar-r
 }
 .controls .play::before { display: none !important; }
 .controls .play:hover { filter: brightness(1.08); transform: none; }
+.offline-translation-setting { min-width: 0; }
+.offline-translation-setting > span { min-width: 0; }
+.offline-translation-setting small { overflow-wrap: anywhere; }
+.offline-translation-controls { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.offline-translation-controls progress { width: 80px; max-width: 15vw; accent-color: var(--accent); }
+.offline-translation-controls progress[hidden] { display: none; }

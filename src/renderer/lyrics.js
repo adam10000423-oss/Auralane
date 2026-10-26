@@ -76,6 +76,10 @@ requestAnimationFrame(() => applyMode(true));
 
 window.metro.onLyricUpdate((nextPayload) => {
   if (!nextPayload) return;
+  if(nextPayload.clockOnly){
+    if(nextPayload.trackId!==payload?.trackId)return;
+    payload={...payload,...nextPayload,clockOnly:false};anchorTimeline(payload);selectTimelineLine(timelineNow());renderPayload();return;
+  }
   const trackChanged = Boolean(nextPayload.trackId && nextPayload.trackId !== payload?.trackId);
   payload = nextPayload;
   applyWidgetLanguage();
@@ -142,7 +146,7 @@ function anchorTimeline(nextPayload) {
 
 function timelineNow() {
   if (!timelinePlaying) return timelineAnchor;
-  return timelineAnchor + ((performance.now() - timelineAnchorAt) / 1000) * timelineRate;
+  return timelineAnchor + Math.min(2,(performance.now() - timelineAnchorAt) / 1000) * timelineRate;
 }
 
 function selectTimelineLine(now) {
@@ -280,6 +284,8 @@ function fitElement(element, preferredSize, minimumSize) {
 }
 
 function applyDisplaySettings(settings = {}) {
+  window.AuralaneLyricColors?.apply(settings.lyricColors);
+  document.documentElement.dataset.colorScheme=settings.colorScheme==="light"?"light":"dark";
   const opacity = Math.max(20, Math.min(95, Number(settings.opacity ?? settings.desktopLyricsOpacity ?? 65))) / 100;
   const panelOpacity = 0.46 + opacity * 0.34;
   document.documentElement.style.setProperty("--panel-opacity", panelOpacity.toFixed(2));
@@ -306,6 +312,10 @@ function readableLyricsAccent(rgb) {
     g: Math.max(0, Math.min(255, Number(rgb.g) || 0)),
     b: Math.max(0, Math.min(255, Number(rgb.b) || 0))
   };
+  if(document.documentElement.dataset.colorScheme==="light"){
+    while(relativeLuminance(color)>.11){color.r*=.9;color.g*=.9;color.b*=.9;}
+    return {r:Math.round(color.r),g:Math.round(color.g),b:Math.round(color.b)};
+  }
   while (relativeLuminance(color) < 0.5) {
     color.r += (255 - color.r) * 0.1;
     color.g += (255 - color.g) * 0.1;

@@ -2,8 +2,11 @@ const crypto = require("crypto");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const zlib = require("node:zlib");
 const { transliterate } = require("transliteration");
 const { DOMParser } = require("@xmldom/xmldom");
+const extraLyricsProviders = require("./lyricsProviders");
+const lyricText = require("../renderer/lyricText");
 
 const LRCLIB_ORIGIN = "https://lrclib.net";
 const LYRICS_OVH_ORIGIN = "https://api.lyrics.ovh";
@@ -41,8 +44,6 @@ const LRCLIB_BROAD_SEARCH_TIMEOUT_MS = 3600;
 const KUGOU_FETCH_TIMEOUT_MS = 6500;
 const KUGOU_DURATION_TOLERANCE_SECONDS = 8;
 const EXTENDED_LYRICS_FETCH_TIMEOUT_MS = 15000;
-const PROVIDER_COOLDOWN_MS = 30 * 60 * 1000;
-const providerCooldowns = new Map();
 const MUSIXMATCH_APP_ID = "android-player-v1.0";
 const MUSIXMATCH_TOKEN_TTL_MS = 25 * 60 * 1000;
 let cachedMusixmatchToken = { token: "", expiresAt: 0 };
@@ -132,6 +133,8 @@ const LYRICS_PLUS_BASE_URLS = [
   "https://lyricsplus.binimum.org",
   "https://lyricsplus.atomix.one",
   "https://lyricsplus.prjktla.my.id",
+  "https://lyricsplus.prjktla.workers.dev",
+  "https://lyrics-plus-backend.vercel.app",
   "https://lyricsplus-seven.vercel.app"
 ];
 const ONLINE_LYRIC_PROVIDERS = [
@@ -142,9 +145,11 @@ const ONLINE_LYRIC_PROVIDERS = [
   KUGOU_PROVIDER,
   PAXSENIX_PROVIDER,
   LYRICS_PLUS_PROVIDER,
+  ...extraLyricsProviders.providerIds,
   LYRICS_OVH_PROVIDER
 ];
 const PROVIDER_LABELS = {
+  ...extraLyricsProviders.labels,
   [AUTO_PROVIDER]: "Auto",
   [LOCAL_PROVIDER]: "Local LRC",
   [BETTER_LYRICS_PROVIDER]: "BetterLyrics",
@@ -159,6 +164,7 @@ const PROVIDER_LABELS = {
 };
 
 const TITLE_CLEANUP_PATTERNS = [
+  /\s*[（(\[]\s*(?:合作演出|合作演唱|合唱|客串|feat(?:uring)?\.?|ft\.?)\s*[:：]?\s*[^）)\]]*[）)\]]/gi,
   /\s*\(.*?(official|video|audio|lyrics|lyric|visualizer|hd|hq|4k|remaster|remix|live|acoustic|version|edit|extended|radio|clean|explicit).*?\)/gi,
   /\s*\[.*?(official|video|audio|lyrics|lyric|visualizer|hd|hq|4k|remaster|remix|live|acoustic|version|edit|extended|radio|clean|explicit).*?\]/gi,
   /\s*\|.*$/g,
@@ -420,6 +426,8 @@ function lyricsSearchContext(track, overrides = {}) {
   return {
     title,
     rawTitle,
+    isrc: String(track?.isrc || "").trim(),
+    videoId: String(track?.videoId || track?.id || ""),
     artist: primaryArtist,
     duration,
     album,
@@ -565,7 +573,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_FETCH_TIM
   try {
     return await fetch(url, {
       ...options,
-      signal: controller.signal
+      signal: options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal
     });
   } catch (error) {
     if (error?.name === "AbortError") throw new Error(`${label} timed out`);
@@ -867,6 +875,10 @@ function ttmlToLrc(ttml) {
     .find(Boolean) || 0) || 0;
   const paragraphs = ttmlElements(document, "p");
   const parsed = [];
+  const agents=new Map();
+  for(const element of ttmlElements(document,"agent")){
+    const id=ttmlAttribute(element,"id");if(id&&!agents.has(id))agents.set(id,normalizeLyricsAgent(id)|| (agents.size===0?"v1":agents.size===1?"v2":"v1000"));
+  }
 
   const addLine = (root, paragraph, isBackground) => {
     const words = ttmlTimedSpans(root, paragraph, offset, isBackground);
@@ -878,8 +890,8 @@ function ttmlToLrc(ttml) {
     if (!Number.isFinite(start)) return;
     const text = words.length ? ttmlWordsText(words) : ttmlPlainText(root, paragraph, isBackground);
     if (!text) return;
-    const rawAgent = ttmlInheritedAttribute(root, "agent", paragraph.parentNode);
-    parsed.push({ start, text, words, isBackground, agent: normalizeLyricsAgent(rawAgent) });
+    const rawAgent = ttmlInheritedAttribute(root, "agent", paragraph.parentNode).replace(/^#/,"");
+    parsed.push({ start, text, words, isBackground, agent: agents.get(rawAgent)||normalizeLyricsAgent(rawAgent) });
   };
 
   for (const paragraph of paragraphs) {
@@ -916,7 +928,8 @@ function ttmlToLrc(ttml) {
 function lyricsPlusToLrc(response) {
   const lyrics = Array.isArray(response?.lyrics) ? response.lyrics : [];
   if (!lyrics.length) return "";
-  const isWordSync = String(response?.type || "").toLowerCase() === "word";
+  const isWordSync = ["word", "syllable", "wordsync"].includes(String(response?.type || "").toLowerCase())
+    || lyrics.some((line) => Array.isArray(line?.syllabus) && line.syllabus.some((word) => word?.time != null));
   const lines = [];
   let lastWasBg = false;
   for (const line of lyrics) {
@@ -1084,6 +1097,8 @@ function musixmatchTrackMetadata(track = {}) {
   const info = track || {};
   return {
     id: info.track_id ?? info.common_track_id ?? info.track_mbid ?? "",
+    commontrackId: info.commontrack_id || info.common_track_id || "",
+    hasRichsync: Number(info.has_richsync) === 1,
     trackName: String(info.track_name || "").trim(),
     artistName: String(info.artist_name || "").trim(),
     albumName: String(info.album_name || "").trim(),
@@ -1174,6 +1189,26 @@ async function queryMusixmatchTracks(context, options = {}) {
   return collected;
 }
 
+function musixmatchRichsyncToLrc(body) {
+  let rows;
+  try { rows = typeof body === "string" ? JSON.parse(body) : body; } catch { return ""; }
+  if (!Array.isArray(rows)) return "";
+  return rows.flatMap(row => {
+    const start = Number(row.ts), end = Number(row.te);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || !Array.isArray(row.l)) return [];
+    const words = row.l.map(word => ({ text: String(word.c || ""), start: start + Number(word.o) }))
+      .filter(word => word.text.trim() && Number.isFinite(word.start) && word.start >= start && word.start < end);
+    if (!words.length) return [];
+    const text = String(row.x || words.map(word => word.text).join(" "));
+    const timing = words.map((word, index) => {
+      const finish = words[index + 1]?.start ?? end;
+      if (finish <= word.start) return "";
+      return `${word.text.replace(/[|<>:]/g, "").trim()}:${word.start}:${finish}`;
+    }).filter(Boolean);
+    return timing.length === words.length ? [`${formatLyricsTimestamp(start)}${text}`, `<${timing.join("|")}>`] : [];
+  }).join("\n");
+}
+
 async function queryMusixmatchSubtitle(trackId, options = {}) {
   if (!trackId) return null;
   const timeoutMs = options.noTimeout ? 0 : DEFAULT_FETCH_TIMEOUT_MS;
@@ -1187,6 +1222,17 @@ async function queryMusixmatchSubtitle(trackId, options = {}) {
   ];
   const runFetch = async (token) => {
     let got401 = false;
+    if (options.hasRichsync && options.commontrackId) {
+      const richUrl = new URL("/ws/1.1/track.richsync.get", MUSIXMATCH_ORIGIN);
+      for (const [key, value] of makeParams(token)) richUrl.searchParams.set(key, value);
+      richUrl.searchParams.set("commontrack_id", String(options.commontrackId));
+      try {
+        const data = await fetchJson(signMusixmatchUrl(richUrl), { headers: musixmatchHeaders() }, timeoutMs, "Musixmatch RichSync");
+        const rich = data?.message?.body?.richsync;
+        const body = musixmatchRichsyncToLrc(rich?.richsync_body);
+        if (body) return { result: { type: "richsync", language: rich.richsync_language || "", body }, got401 };
+      } catch { /* A missing rich stream still permits a line-synced result. */ }
+    }
     const subtitleUrl = new URL("/ws/1.1/track.subtitle.get", MUSIXMATCH_ORIGIN);
     for (const [k, v] of makeParams(token)) subtitleUrl.searchParams.set(k, v);
     const signedSubtitleUrl = signMusixmatchUrl(subtitleUrl);
@@ -1242,9 +1288,9 @@ async function findLyricsCandidatesFromMusixmatch(context, limit = 8, options = 
     .sort((a, b) => b.score - a.score)
     .slice(0, Math.max(3, Math.min(limit, 8)));
   const settled = await Promise.allSettled(ranked.map(async ({ track, score }) => {
-    const fetched = await queryMusixmatchSubtitle(track.id, options);
+    const fetched = await queryMusixmatchSubtitle(track.id, { ...options, hasRichsync: track.hasRichsync, commontrackId: track.commontrackId });
     if (!fetched || !fetched.body) return null;
-    const isSubtitle = fetched.type === "subtitle";
+    const isSubtitle = fetched.type === "subtitle" || fetched.type === "richsync";
     const hasTiming = isSubtitle && /^\s*\[\d{1,2}:\d{2}/m.test(fetched.body);
     return makeLyricsCandidate({
       context,
@@ -1352,6 +1398,27 @@ async function queryKugouLyricsByKeyword(context, options = {}) {
   return Array.isArray(data?.candidates) ? data.candidates : [];
 }
 
+function kugouKrcToLrc(content) {
+  const bytes = Buffer.from(String(content || ""), "base64");
+  if (bytes.length > 2 * 1024 * 1024 || bytes.subarray(0, 4).toString() !== "krc1") return "";
+  const key = [64, 71, 97, 119, 94, 50, 116, 71, 81, 54, 49, 45, 206, 210, 110, 105];
+  const compressed = Buffer.from(bytes.subarray(4));
+  for (let index = 0; index < compressed.length; index++) compressed[index] ^= key[index % key.length];
+  let text;
+  try { text = zlib.inflateSync(compressed, { maxOutputLength: 2 * 1024 * 1024 }).toString("utf8"); } catch { return ""; }
+  return text.split(/\r?\n/).flatMap(line => {
+    const match = /^\[(\d+),(\d+)\](.*)$/.exec(line);
+    if (!match) return [];
+    const start = Number(match[1]);
+    const words = [...match[3].matchAll(/<(\d+),(\d+),\d+>([^<]*)/g)]
+      .filter(word => word[3].trim() && Number(word[2]) > 0)
+      .map(word => ({ text: word[3].replace(/[|<>:]/g, "").trim(), start: (start + Number(word[1])) / 1000, end: (start + Number(word[1]) + Number(word[2])) / 1000 }));
+    if (!words.length) return [];
+    return [`${formatLyricsTimestamp(start / 1000)}${words.map(word => word.text).join(" ")}`,
+      `<${words.map(word => `${word.text}:${word.start}:${word.end}`).join("|")}>`];
+  }).join("\n");
+}
+
 async function downloadKugouLyrics(candidate, options = {}) {
   if (!candidate?.id || !candidate?.accesskey) return "";
   const url = new URL("/download", KUGOU_ORIGIN);
@@ -1361,21 +1428,50 @@ async function downloadKugouLyrics(candidate, options = {}) {
   url.searchParams.set("ver", "1");
   url.searchParams.set("id", String(candidate.id));
   url.searchParams.set("accesskey", candidate.accesskey);
+  try {
+    url.searchParams.set("fmt", "krc");
+    const rich = await fetchJson(url, {}, options.timeoutMs ?? KUGOU_FETCH_TIMEOUT_MS, "KuGou word lyrics");
+    const timed = kugouKrcToLrc(rich?.content);
+    if (timed) return timed;
+  } catch { /* Some recordings expose only the line-synced document. */ }
+  url.searchParams.set("fmt", "lrc");
   const data = await fetchJson(url, {}, options.timeoutMs ?? KUGOU_FETCH_TIMEOUT_MS, "KuGou lyric download");
   const content = typeof data?.content === "string" ? data.content : "";
   if (!content) return "";
   return normalizeKugouLyrics(Buffer.from(content, "base64").toString("utf8"));
 }
 
+function providerPayloadToLrc(value, depth = 0) {
+  if (depth > 8 || value == null) return "";
+  if (typeof value === "string") {
+    const text = value.trim();
+    if (!text) return "";
+    if (/^[\[{]/.test(text)) {
+      try { return providerPayloadToLrc(JSON.parse(text), depth + 1); } catch {}
+    }
+    const decoded = text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+    if (/<(?:[\w-]+:)?tt[\s>]/i.test(decoded)) return ttmlToLrc(decoded);
+    if (/^\s*</.test(decoded) || /^(?:error|lyrics? (?:not found|unavailable))\b/i.test(decoded)) return "";
+    return text;
+  }
+  if (Array.isArray(value) || typeof value !== "object" || value.error || value.success === false || value.ok === false) return "";
+  const structured = lyricsPlusToLrc(value);
+  if (structured) return structured;
+  for (const key of ["ttml", "ttmlContent", "syncedLyrics", "richSyncLyrics", "lrc", "lyrics", "data", "result", "content", "plainLyrics", "text"]) {
+    const result = providerPayloadToLrc(value[key], depth + 1);
+    if (result) return result;
+  }
+  return "";
+}
+
 async function queryBetterLyrics(context, options = {}) {
-  if ((providerCooldowns.get(BETTER_LYRICS_PROVIDER) || 0) > Date.now()) return "";
   const url = new URL("/getLyrics", BETTER_LYRICS_ORIGIN);
   url.searchParams.set("s", context.title);
   url.searchParams.set("a", context.artist);
   if (context.duration) url.searchParams.set("d", String(context.duration));
   if (context.album) url.searchParams.set("al", context.album);
   try {
-    const data = await fetchJson(
+    const data = await fetchText(
       url,
       {
         headers: {
@@ -1385,35 +1481,36 @@ async function queryBetterLyrics(context, options = {}) {
       options.timeoutMs ?? EXTENDED_LYRICS_FETCH_TIMEOUT_MS,
       "BetterLyrics"
     );
-    return typeof data?.ttml === "string" ? ttmlToLrc(data.ttml) : "";
-  } catch {
-    providerCooldowns.set(BETTER_LYRICS_PROVIDER, Date.now() + PROVIDER_COOLDOWN_MS);
-    return "";
+    return providerPayloadToLrc(data);
+  } catch (error) {
+    throw new Error(`BetterLyrics: ${errorMessage(error)}`);
   }
 }
 
 async function queryLyricsPlus(context, options = {}) {
-  if ((providerCooldowns.get(LYRICS_PLUS_PROVIDER) || 0) > Date.now()) {
-    return { lrc: "", sourceId: "lyricsplus" };
-  }
   const timeoutMs = options.timeoutMs ?? EXTENDED_LYRICS_FETCH_TIMEOUT_MS;
-  const errors = [];
-  for (const baseUrl of LYRICS_PLUS_BASE_URLS) {
-    try {
+  const controller = new AbortController();
+  const mirrors = LYRICS_PLUS_BASE_URLS.map(async (baseUrl) => {
       const url = new URL("/v2/lyrics/get", baseUrl);
       url.searchParams.set("title", context.title);
       url.searchParams.set("artist", context.artist);
       if (context.duration) url.searchParams.set("duration", String(context.duration));
       if (context.album) url.searchParams.set("album", context.album);
-      const data = await fetchJson(url, {}, timeoutMs, "LyricsPlus");
-      const lrc = lyricsPlusToLrc(data);
-      if (lrc) return { lrc, sourceId: `lyricsplus:${baseUrl}` };
-    } catch (error) {
-      errors.push(errorMessage(error));
-    }
+      if (context.isrc) url.searchParams.set("isrc", context.isrc);
+      const data = await fetchJson(url, { signal: controller.signal }, timeoutMs, "LyricsPlus");
+      const lrc = providerPayloadToLrc(data);
+      if (!lrc) throw new Error("No lyrics");
+      return { lrc, sourceId: `lyricsplus:${baseUrl}` };
+  });
+  try {
+    return await Promise.any(mirrors);
+  } catch (error) {
+    const messages = (error.errors || []).map(errorMessage).filter((message) => message !== "No lyrics");
+    if (messages.length) throw new Error(uniqueErrorSummary(messages));
+    return { lrc: "", sourceId: "lyricsplus" };
+  } finally {
+    controller.abort();
   }
-  if (errors.length) providerCooldowns.set(LYRICS_PLUS_PROVIDER, Date.now() + PROVIDER_COOLDOWN_MS);
-  return { lrc: "", sourceId: "lyricsplus" };
 }
 
 let appleMusicToken = "";
@@ -1456,7 +1553,6 @@ async function searchPaxsenixAppleMusic(context, options = {}) {
         duration: item.trackTimeMillis ? Math.round(Number(item.trackTimeMillis) / 1000) : null
       })).filter((item) => item.id);
     }
-    return [];
   } catch {
     // Older Apple Music catalog search remains as a compatibility fallback.
   }
@@ -1504,6 +1600,7 @@ async function queryPaxsenixLyricsById(id, options = {}) {
   if (!id) return "";
   const url = new URL("/apple-music/lyrics", PAXSENIX_ORIGIN);
   url.searchParams.set("id", id);
+  url.searchParams.set("ttml", "true");
   const data = await fetchJson(
     url,
     {
@@ -1514,7 +1611,7 @@ async function queryPaxsenixLyricsById(id, options = {}) {
     options.timeoutMs ?? EXTENDED_LYRICS_FETCH_TIMEOUT_MS,
     "Paxsenix lyrics"
   );
-  return paxsenixResponseToLrc(data);
+  return providerPayloadToLrc(data) || paxsenixResponseToLrc(data);
 }
 
 function parseTimestamp(minutes, seconds, fraction) {
@@ -1755,7 +1852,7 @@ function parseLyrics(text) {
     }
   }
 
-  return expandParentheticalBackgroundLines(lines);
+  return lyricText.lines(expandParentheticalBackgroundLines(lines));
 }
 
 function emptyLyricsResult(context, provider, attemptedProviders = [provider]) {
@@ -1955,6 +2052,7 @@ function lyricsLikelyIncomplete(candidate = {}) {
 
 function dedupeLyricsCandidates(candidates = []) {
   const seen = new Set();
+  const documents = new Set();
   const unique = [];
   for (const candidate of candidates) {
     const key = [
@@ -1966,6 +2064,12 @@ function dedupeLyricsCandidates(candidates = []) {
     ].join(":").toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
+    if (candidate.providerKey === KUGOU_PROVIDER && candidate.lines?.length) {
+      const documentKey = JSON.stringify([candidate.title, candidate.artist,
+        crypto.createHash("sha256").update(JSON.stringify(candidate.lines)).digest("hex")]);
+      if (documents.has(documentKey)) continue;
+      documents.add(documentKey);
+    }
     unique.push(candidate);
   }
   return unique;
@@ -2012,8 +2116,8 @@ async function kugouCandidateFromItem(context, candidate, options = {}) {
     context,
     providerKey: KUGOU_PROVIDER,
     sourceId: kugouCandidateId(candidate),
-    title: context.title,
-    artist: context.artist,
+    title: candidate.song || context.title,
+    artist: candidate.singer || context.artist,
     album: context.album,
     duration: candidateDuration,
     synced: true,
@@ -2120,11 +2224,20 @@ async function findLyricsCandidatesFromKugou(context, limit = 8, options = {}) {
   const seen = new Set();
   const rawCandidates = [];
   const errors = [];
+  // Keyword and hash lookup are independent. Observe rejection immediately.
+  const keywordResult = queryKugouLyricsByKeyword(context, { timeoutMs })
+    .then((value) => ({ value }), (error) => ({ error }));
 
   try {
     const songs = await queryKugouSongs(context, { timeoutMs });
+    const hashes = new Set();
     const hashJobs = songs
       .filter((song) => {
+        if (!song.hash || hashes.has(song.hash)) return false;
+        hashes.add(song.hash);
+        const identity = { sourceTitle: song.songname || "", sourceArtist: song.singername || "",
+          duration: kugouDurationSeconds(song.duration) };
+        if (!candidateMatchesSearchTitle(context, identity) || !candidateMatchesSearchArtist(context, identity)) return false;
         const duration = kugouDurationSeconds(song.duration);
         return !context.duration || !duration ||
           Math.abs(duration - context.duration) <= KUGOU_DURATION_TOLERANCE_SECONDS;
@@ -2143,19 +2256,21 @@ async function findLyricsCandidatesFromKugou(context, limit = 8, options = {}) {
     errors.push(errorMessage(error));
   }
 
-  try {
-    rawCandidates.push(...await queryKugouLyricsByKeyword(context, { timeoutMs }));
-  } catch (error) {
-    errors.push(errorMessage(error));
-  }
+  const keyword = await keywordResult;
+  if (keyword.error) errors.push(errorMessage(keyword.error));
+  else rawCandidates.push(...keyword.value);
 
   const downloadTargets = [];
   for (const candidate of rawCandidates) {
-    const key = kugouCandidateId(candidate);
+    const key = String(candidate?.id || "");
     if (seen.has(key) || !candidate?.id || !candidate?.accesskey) continue;
+    const duration = kugouDurationSeconds(candidate.duration);
+    const identity = { sourceTitle: candidate.song || "", sourceArtist: candidate.singer || "", duration };
+    if (!candidateMatchesSearchTitle(context, identity) || !candidateMatchesSearchArtist(context, identity)) continue;
+    if (context.duration && duration && Math.abs(duration - context.duration) > KUGOU_DURATION_TOLERANCE_SECONDS) continue;
     seen.add(key);
     downloadTargets.push(candidate);
-    if (downloadTargets.length >= Math.max(limit * 2, 8)) break;
+    if (downloadTargets.length >= Math.min(24, Math.max(limit * 2, 8))) break;
   }
 
   const downloads = await Promise.allSettled(
@@ -2250,6 +2365,26 @@ async function findNeteaseCandidateBySourceId(context, sourceId, options = {}) {
     rawLyrics,
     score: Number.MAX_SAFE_INTEGER
   });
+}
+
+async function findExtraLyricsCandidates(context, provider, options = {}) {
+  if (!context.title || !context.artist) return [];
+  try {
+    const result = await extraLyricsProviders.query(provider, {
+      ...context,
+      durationSeconds: provider === "genius" ? undefined : context.duration,
+      duration: provider === "genius" ? undefined : context.duration
+    }, { timeoutMs: 10000, signal: options.signal, allowUnverifiedMetadata: ["unison", "betterlyrics-portato"].includes(provider) });
+    const rawLyrics = providerPayloadToLrc(result.rawLyrics);
+    const candidate = makeLyricsCandidate({ context, providerKey: provider, sourceId: result.sourceId,
+      title: result.metadata.title || context.title, artist: result.metadata.artist || context.artist,
+      album: context.album, duration: result.metadata.duration, rawLyrics,
+      synced: result.metadata.synced, score: result.metadata.durationVerified ? 5 : 2 });
+    return candidate ? [{ ...candidate, recordingMatch: result.metadata.match, unverifiedIdentity: result.metadata.match === "query", durationVerified: result.metadata.durationVerified }] : [];
+  } catch (error) {
+    if (error.code === "NOT_FOUND" || error.code === "NO_MATCH") return [];
+    throw error;
+  }
 }
 
 async function findLyricsCandidatesFromBetterLyrics(context, limit = 4, options = {}) {
@@ -2743,6 +2878,10 @@ async function translateLyrics(lines = [], options = {}) {
 }
 
 async function findLyricsFromProvider(context, provider) {
+  if (extraLyricsProviders.providerIds.includes(provider)) {
+    const candidate = (await findExtraLyricsCandidates(context, provider))[0];
+    return candidate || emptyLyricsResult(context, provider);
+  }
   if (provider === LYRICS_OVH_PROVIDER) return findLyricsFromLyricsOvh(context);
   if (provider === KUGOU_PROVIDER) return findLyricsFromKugou(context);
   if (provider === NETEASE_PROVIDER) {
@@ -2777,6 +2916,7 @@ function wordTimedLineCount(candidate = {}) {
 }
 
 function compareLyricsQuality(left = {}, right = {}, providerOrder = []) {
+  if (Boolean(left.unverifiedIdentity) !== Boolean(right.unverifiedIdentity)) return left.unverifiedIdentity ? 1 : -1;
   const leftTier = lyricsTimingTier(left);
   const rightTier = lyricsTimingTier(right);
 
@@ -2893,8 +3033,9 @@ async function findLyrics(track, options = {}) {
     ? options.providers.map(String).filter((provider) => ONLINE_LYRIC_PROVIDERS.includes(provider))
     : [];
   const providers = preferredProvider === AUTO_PROVIDER
-    ? (autoProviders.length ? autoProviders : ONLINE_LYRIC_PROVIDERS)
+    ? (Array.isArray(options.providers) ? autoProviders : ONLINE_LYRIC_PROVIDERS)
     : [preferredProvider];
+  if (Array.isArray(options.providers) && preferredProvider !== AUTO_PROVIDER && !options.providers.includes(preferredProvider)) return emptyLyricsResult(context, preferredProvider, []);
   if (preferredProvider !== AUTO_PROVIDER) {
     const result = await findLyricsFromProvider(context, providers[0]);
     return result?.found && result.lines?.length
@@ -2906,7 +3047,7 @@ async function findLyrics(track, options = {}) {
     providers.map((provider) => findLyricsFromProvider(context, provider))
   );
   const candidates = settled
-    .filter((result) => result.status === "fulfilled" && result.value?.found && result.value.lines?.length)
+    .filter((result) => result.status === "fulfilled" && result.value?.found && result.value.lines?.length && !result.value.unverifiedIdentity)
     .map((result) => result.value)
     .sort((left, right) => compareLyricsQuality(left, right, providers));
   if (candidates.length) {
@@ -2971,6 +3112,9 @@ async function searchLyricsCandidates(track, options = {}) {
   }
 
   const providerJobs = providers.map(async (provider) => {
+    if (extraLyricsProviders.providerIds.includes(provider)) {
+      return { provider, candidates: await findExtraLyricsCandidates(context, provider, providerSearchOptions) };
+    }
     if (provider === LRCLIB_PROVIDER) {
       return {
         provider,
@@ -3062,5 +3206,8 @@ module.exports = {
   sanitizeTranslationResult,
   translationLooksDegenerate,
   translateLyrics,
-  providerLabel
+  providerLabel,
+  providerPayloadToLrc,
+  musixmatchRichsyncToLrc,
+  kugouKrcToLrc
 };

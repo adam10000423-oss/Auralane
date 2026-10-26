@@ -3,7 +3,7 @@ const http = require("node:http");
 const crypto = require("node:crypto");
 const { performance } = require("node:perf_hooks");
 const { WebSocketServer, WebSocket } = require("ws");
-const { LIMITS, fault, object, tracks, roomCode, name, position } = require("../../src/shared/onlineTogetherProtocol");
+const { LIMITS, PERMISSIONS, permissions, fault, object, tracks, roomCode, name, position } = require("../../src/shared/onlineTogetherProtocol");
 
 function createRelay(options = {}) {
   const rooms = new Map(), rates = new Map();
@@ -23,6 +23,7 @@ function createRelay(options = {}) {
   }
   function snapshot(room) {
     return { protocol: 1, code: room.code, seq: room.seq, serverTime: now(), queue: room.queue,
+      permissionsVersion: 1, permissions: { ...room.permissions }, actorId: room.actorId || "",
       playback: { ...room.playback }, members: [...room.members.values()].map(m => ({ id: m.id, name: m.name, host: m.host })) };
   }
   function send(socket, value) {
@@ -74,9 +75,58 @@ function createRelay(options = {}) {
     return options.trustProxy ? String(req.headers["x-forwarded-for"] || req.socket.remoteAddress).split(",").at(-1).trim().slice(0, 100)
       : req.socket.remoteAddress || "unknown";
   }
-  function commit(room, input) {
+  function commit(room, input, member) {
+    if (!member.host && !["playPause", "skip", "select", "seek", "add", "reorder", "remove"].includes(input.type)) throw fault("HOST_ONLY", 403);
+    const permission = input.type === "select" ? "skip" : input.type;
+    if (!member.host && room.permissions[permission] !== true) throw fault("PERMISSION_DENIED", 403);
     if (input.expectedSeq !== room.seq) throw fault("STALE_STATE", 409);
-    if (input.type === "queue") {
+    const at = now(), current = room.queue[room.playback.index]?.id, seconds = position(snapshot(room), at);
+    function preserveQueue(next) {
+      const index = next.findIndex(track => track.id === current);
+      room.queue = tracks(next);
+      room.playback = { index, playing: index >= 0 && room.playback.playing,
+        position: index >= 0 ? Math.min(next[index].duration || 86400, seconds) : 0, anchoredAt: at };
+    }
+    if (input.type === "permissions") {
+      room.permissions = permissions(input.permissions);
+    } else if (input.type === "add") {
+      const incoming = tracks(input.tracks);
+      if (input.next !== undefined && typeof input.next !== "boolean") throw fault("INVALID_COMMAND");
+      if (input.next && !member.host && !room.permissions.reorder) throw fault("PERMISSION_DENIED", 403);
+      if (input.next && incoming.some(track => room.queue.some(existing => existing.id === track.id))) throw fault("INVALID_QUEUE");
+      const additions = incoming.filter(track => !room.queue.some(existing => existing.id === track.id));
+      const next = [...room.queue]; next.splice(input.next ? Math.max(0, room.playback.index + 1) : next.length, 0, ...additions);
+      preserveQueue(next);
+    } else if (input.type === "reorder" || input.type === "remove") {
+      const index = room.queue.findIndex(track => track.id === input.trackId);
+      if (index < 0) throw fault("TRACK_NOT_FOUND", 409);
+      if (input.type === "remove") {
+        if (!member.host && (room.queue.length <= 1 || input.trackId === current)) throw fault("HOST_ONLY", 403);
+        preserveQueue(room.queue.filter((_, i) => i !== index));
+      } else {
+        const next = room.queue.filter((_, i) => i !== index);
+        const target = input.beforeId === null ? next.length : next.findIndex(track => track.id === input.beforeId);
+        if (target < 0) throw fault("TRACK_NOT_FOUND", 409);
+        next.splice(target, 0, room.queue[index]); preserveQueue(next);
+      }
+    } else if (input.type === "playPause" || input.type === "seek" || input.type === "skip" || input.type === "select") {
+      let index = room.playback.index, playing = room.playback.playing, target = seconds;
+      if (input.type === "playPause") {
+        if (typeof input.playing !== "boolean") throw fault("INVALID_PLAYBACK");
+        playing = input.playing;
+      } else if (input.type === "seek") {
+        if (!Number.isFinite(input.position) || input.position < 0 || input.position > (room.queue[index]?.duration || 86400)) throw fault("INVALID_PLAYBACK");
+        target = input.position;
+      } else {
+        if (input.type === "skip") {
+          if (input.direction !== 1 && input.direction !== -1) throw fault("INVALID_PLAYBACK");
+          index += input.direction;
+        } else index = room.queue.findIndex(track => track.id === input.trackId);
+        playing = true; target = 0;
+      }
+      if (index < 0 || index >= room.queue.length) throw fault("TRACK_NOT_FOUND", 409);
+      room.playback = { index, playing, position: target, anchoredAt: at + (playing ? 350 : 0) };
+    } else if (input.type === "queue") {
       const next = tracks(input.tracks), id = room.queue[room.playback.index]?.id;
       const index = next.findIndex(t => t.id === id), at = now(), seconds = position(snapshot(room), at);
       room.queue = next;
@@ -88,6 +138,7 @@ function createRelay(options = {}) {
           !Number.isFinite(seconds) || seconds < 0 || seconds > (index >= 0 ? room.queue[index].duration || 86400 : 0) || (index < 0 && playing)) throw fault("INVALID_PLAYBACK");
       room.playback = { index, playing, position: seconds, anchoredAt: now() + (playing ? 350 : 0) };
     } else throw fault("INVALID_COMMAND");
+    room.actorId = member.id;
     broadcast(room);
     return snapshot(room);
   }
@@ -107,7 +158,10 @@ function createRelay(options = {}) {
         if (rooms.size >= maxRooms) throw fault("SERVER_BUSY", 503);
         let code;
         do { code = Array.from(crypto.randomBytes(6), b => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32]).join(""); } while (rooms.has(code));
-        const room = { code, seq: 0, createdAt: now(), members: new Map(), queue: [], playback: { index: -1, position: 0, playing: false, anchoredAt: now() } };
+        // Old hosts do not apply member-authored state. Keep their rooms
+        // read-only until a permissions-aware client explicitly opts in.
+        const roomPermissions = input.permissions === undefined ? Object.fromEntries(Object.keys(PERMISSIONS).map(key => [key, false])) : permissions(input.permissions);
+        const room = { code, seq: 0, createdAt: now(), members: new Map(), queue: [], permissions: roomPermissions, playback: { index: -1, position: 0, playing: false, anchoredAt: now() } };
         rooms.set(code, room);
         return reply(201, addMember(room, input.name, true));
       }
@@ -128,9 +182,8 @@ function createRelay(options = {}) {
         return reply(200, { ok: true });
       }
       if (action === "command" && req.method === "POST") {
-        if (!member.host) throw fault("HOST_ONLY", 403);
         rate(`command:${member.id}`, 120);
-        return reply(200, commit(room, await body(req)));
+        return reply(200, commit(room, await body(req), member));
       }
       throw fault("NOT_FOUND", 404);
     } catch (error) { reply(error.status || 500, { error: error.code || "SERVER_ERROR" }); }

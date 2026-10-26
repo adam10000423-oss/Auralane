@@ -55,7 +55,12 @@ Electron main process and are never stored in the renderer or invitation URLs.
 
 - Single service instance. Room state is in memory, not shared across replicas.
 - Eight members per room, 200 tracks per queue, 100 concurrent rooms by default.
-- Only the host can change playback and queue state. Guests can leave freely.
+- The host controls member permissions for playback, seeking, adding, reordering,
+  and removing queued tracks. Whole-queue replacement and removal of the current
+  track remain host-only. See [room permissions](room-permissions.md).
+- Old desktop hosts retain read-only guest rooms until they upgrade. Room
+  permission controls also require restarting the desktop main process after
+  development changes; reloading only the renderer is insufficient.
 - Host departure closes the room; a disconnected host has 60 seconds to return.
 - All rooms expire after 12 hours. Restarting or redeploying closes all rooms.
 - Creation, joining, messages and HTTP calls are rate limited. Request, message
